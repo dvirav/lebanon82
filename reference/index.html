@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>חדר מצב 1982</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#efeae2; --pattern:rgba(0,0,0,.035); --header:#f0f2f5; --header-text:#111b21; --sub:#667781;
+  --in:#ffffff; --text:#111b21; --meta:#667781; --pill:#ffffff; --pill-text:#54656f;
+  --sys:#fff5c4; --sys-text:#54656f; --accent:#00a884; --accent-ink:#ffffff; --bar:#e9edef; --shadow:rgba(11,20,26,.13);
+  --overlay:rgba(240,242,245,.97); --card:#ffffff; --line:#d1d7db;
+  --ok:#00a884; --warn:#c77c00; --bad:#d93a3f;
+  --r-bg:#f0f2f5; --r-card:#ffffff; --r-text:#111b21; --r-sub:#54656f; --r-line:#d1d7db;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0b141a; --pattern:rgba(255,255,255,.025); --header:#202c33; --header-text:#e9edef; --sub:#8696a0;
+  --in:#202c33; --text:#e9edef; --meta:#8696a0; --pill:#182229; --pill-text:#8696a0;
+  --sys:#182229; --sys-text:#ffd279; --accent:#00a884; --accent-ink:#ffffff; --bar:#2a3942; --shadow:rgba(0,0,0,.4);
+  --overlay:rgba(11,20,26,.97); --card:#1f2c34; --line:#2a3942;
+  --ok:#21c093; --warn:#f0b43c; --bad:#f2555a;
+  --r-bg:#0b141a; --r-card:#1a262d; --r-text:#e9edef; --r-sub:#8696a0; --r-line:#2a3942;
+}}
+:root[data-theme="dark"]{
+  --bg:#0b141a; --pattern:rgba(255,255,255,.025); --header:#202c33; --header-text:#e9edef; --sub:#8696a0;
+  --in:#202c33; --text:#e9edef; --meta:#8696a0; --pill:#182229; --pill-text:#8696a0;
+  --sys:#182229; --sys-text:#ffd279; --accent:#00a884; --accent-ink:#ffffff; --bar:#2a3942; --shadow:rgba(0,0,0,.4);
+  --overlay:rgba(11,20,26,.97); --card:#1f2c34; --line:#2a3942;
+  --ok:#21c093; --warn:#f0b43c; --bad:#f2555a;
+  --r-bg:#0b141a; --r-card:#1a262d; --r-text:#e9edef; --r-sub:#8696a0; --r-line:#2a3942;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:"Heebo","Segoe UI","Arial Hebrew",Arial,sans-serif;background:var(--bg);color:var(--text);font-size:var(--fs,19px)}
+button{font:inherit;color:inherit}
+button:focus-visible,.opt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hidden{display:none !important}
+
+/* ---------- loading / picker ---------- */
+#boot{position:fixed;inset:0;display:grid;place-items:center;color:var(--sub);font-size:16px}
+#picker{position:fixed;inset:0;background:var(--overlay);z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px 16px;text-align:center;overflow:auto}
+#picker h1{margin:0;font-size:clamp(26px,5vw,40px);color:var(--header-text)}
+#picker p{margin:0;color:var(--sub);max-width:44ch;line-height:1.6;font-size:15px}
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;width:min(880px,100%)}
+.role{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 16px;text-align:right;cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:118px}
+.role:hover{border-color:var(--accent)}
+.role b{font-size:18px;color:var(--header-text)}
+.role span{font-size:14px;color:var(--sub);line-height:1.5}
+.role .ico{font-size:26px}
+
+/* ---------- stage (chat) ---------- */
+#stage{position:fixed;inset:0;display:flex;justify-content:center}
+.app{width:100%;max-width:var(--maxw,900px);height:100%;display:flex;flex-direction:column;background:var(--bg);
+  background-image:radial-gradient(var(--pattern) 1.2px,transparent 1.2px);background-size:22px 22px;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+header.wa{background:var(--header);display:flex;align-items:center;gap:14px;padding:10px 18px;flex-shrink:0;box-shadow:0 1px 0 var(--shadow)}
+.avatar{width:46px;height:46px;border-radius:50%;background:#3b4a54;display:grid;place-items:center;font-size:24px;flex-shrink:0}
+.htext{min-width:0;flex:1}
+.hname{font-weight:500;color:var(--header-text);font-size:1.05em}
+.hsub{color:var(--sub);font-size:.72em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hsub.typing{color:var(--accent)}
+.tools{display:flex;gap:4px;align-items:center}
+.tools button{background:none;border:0;color:var(--sub);font-size:19px;width:40px;height:40px;border-radius:50%;cursor:pointer}
+.tools button:hover{background:var(--bar)}
+.conn{font-size:12px;color:var(--sub);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--sub);display:inline-block}
+.dot.on{background:var(--ok)}
+#chat{flex:1;overflow-y:auto;padding:18px 6% 30px;display:flex;flex-direction:column;gap:4px}
+body.ctl #chat{cursor:pointer}
+.row{display:flex;justify-content:flex-end}
+.row.anim,.pill.anim,.sys.anim{animation:pop .22s ease-out}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+.bubble{max-width:80%;background:var(--in);padding:6px 10px 8px;border-radius:9px;border-top-right-radius:0;box-shadow:0 1px .5px var(--shadow);line-height:1.45;margin-top:6px}
+.row.cont .bubble{border-radius:9px;margin-top:0}
+.sender{font-weight:500;font-size:.8em;margin-bottom:2px}
+.meta{font-size:.62em;color:var(--meta);float:left;margin:9px 10px -4px 0;white-space:nowrap}
+.deleted{font-style:italic;color:var(--meta)}
+.pill{align-self:center;background:var(--pill);color:var(--pill-text);font-size:.72em;padding:5px 12px;border-radius:8px;margin:14px 0 8px;box-shadow:0 1px .5px var(--shadow)}
+.sys{align-self:center;background:var(--sys);color:var(--sys-text);font-size:.74em;padding:6px 14px;border-radius:8px;margin:8px 0;box-shadow:0 1px .5px var(--shadow)}
+.poll{min-width:min(460px,72vw)}
+.pq{font-weight:700;margin:2px 0 4px}
+.phint{font-size:.7em;color:var(--meta);margin-bottom:8px}
+.opt{display:block;width:100%;text-align:right;background:none;border:0;color:var(--text);padding:7px 0;cursor:default}
+.poll.votable .opt, body.ctl .opt{cursor:pointer}
+.oline{display:flex;align-items:center;gap:10px}
+.circle{width:20px;height:20px;border:2px solid var(--meta);border-radius:50%;flex-shrink:0}
+.opt.mine .circle{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 3px var(--in)}
+.olabel{flex:1;font-size:.92em}
+.ocount{font-size:.8em;color:var(--meta);min-width:1.5em;text-align:left;font-variant-numeric:tabular-nums}
+.track{height:7px;background:var(--bar);border-radius:4px;margin:6px 30px 0 0;overflow:hidden}
+.fill{height:100%;width:0;background:var(--accent);border-radius:4px;transition:width .35s}
+.typingrow .bubble{padding:12px 16px}
+.dots span{display:inline-block;width:8px;height:8px;margin:0 2px;border-radius:50%;background:var(--meta);animation:blink 1.2s infinite}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.localbar{background:var(--header);color:var(--sub);font-size:12px;padding:7px 16px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;flex-shrink:0}
+kbd{font-family:inherit;background:var(--bar);border-radius:4px;padding:1px 6px;color:var(--header-text)}
+
+/* cover */
+#cover{position:absolute;inset:0;background:var(--r-bg);display:flex;align-items:center;justify-content:center;padding:24px 16px;z-index:5}
+.cover-in{display:flex;gap:48px;align-items:center;max-width:1100px;width:100%;justify-content:center;flex-wrap:wrap}
+.cover-text{max-width:30ch;text-align:right}
+.cover-text .l{font-size:clamp(20px,2.6vw,34px);color:var(--sub);margin:0 0 6px;line-height:1.35}
+.cover-text .q{font-size:clamp(40px,7vw,92px);font-weight:800;color:var(--header-text);margin:18px 0 0;line-height:1.05}
+.cover-text .disc{font-size:13px;color:var(--sub);margin-top:22px;line-height:1.6;max-width:46ch}
+.qrbox{background:#fff;border-radius:16px;padding:16px;text-align:center;color:#111b21;width:min(260px,70vw)}
+.qrbox svg{width:100%;height:auto;display:block}
+.qrbox div{font-size:15px;margin-top:8px;font-weight:500}
+.waitmsg{margin-top:18px;font-size:15px;color:var(--accent);font-weight:500}
+
+/* lesson overlay */
+#lesson{position:absolute;inset:0;background:var(--r-bg);z-index:6;display:flex;align-items:center;justify-content:center;padding:24px 16px;overflow:auto}
+.lcard{max-width:980px;width:100%}
+.lpin{font-size:clamp(14px,1.6vw,20px);color:var(--accent);font-weight:700;margin-bottom:10px}
+.ltitle{font-size:clamp(30px,5.2vw,68px);font-weight:800;line-height:1.12;color:var(--header-text);margin:0 0 18px;max-width:22ch}
+.lbody{font-size:clamp(18px,2.2vw,28px);line-height:1.55;color:var(--text);max-width:40ch;margin:0}
+.lmoment{margin-top:28px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.lmoment .cap{font-size:clamp(13px,1.3vw,16px);color:var(--sub)}
+.lmoment .bubble{font-size:clamp(16px,1.8vw,22px);max-width:min(620px,100%)}
+.closing ol{margin:22px 0 0;padding:0 1.2em 0 0;font-size:clamp(18px,2.2vw,28px);line-height:1.6}
+.closing li{margin-bottom:8px}
+
+/* ---------- remote ---------- */
+#remote{position:fixed;inset:0;background:var(--r-bg);color:var(--r-text);display:flex;flex-direction:column;font-size:16px;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.r-top{padding:12px 16px 10px;border-bottom:1px solid var(--r-line);display:flex;flex-direction:column;gap:10px}
+.r-row{display:flex;align-items:center;gap:10px}
+.r-clock{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.r-clock small{font-size:16px;color:var(--r-sub);font-weight:500}
+.r-status{margin-inline-start:auto;text-align:left;font-size:14px;font-weight:700;line-height:1.3}
+.r-status .s{display:block;font-size:12px;font-weight:500;color:var(--r-sub)}
+.st-ok{color:var(--ok)} .st-warn{color:var(--warn)} .st-bad{color:var(--bad)}
+.segs{display:flex;gap:4px}
+.seg{flex:1;height:6px;border-radius:3px;background:var(--r-line)}
+.seg.done{background:var(--sub)} .seg.cur{background:var(--accent)}
+.r-seg{display:flex;align-items:baseline;gap:8px;font-size:15px}
+.r-seg b{font-size:17px}
+.r-seg .t{margin-inline-start:auto;font-variant-numeric:tabular-nums;font-weight:700}
+.r-body{flex:1;overflow-y:auto;padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.rc{background:var(--r-card);border:1px solid var(--r-line);border-radius:12px;padding:12px 14px}
+.rc h3{margin:0 0 6px;font-size:12px;font-weight:500;color:var(--r-sub)}
+.rc .v{font-size:16px;line-height:1.5}
+.rc.note{border-color:var(--accent)}
+.rc.note .v{font-size:18px;font-weight:500}
+.rc.cut .v{font-size:15px;color:var(--r-sub)}
+.rc.cut.hot{border-color:var(--bad)} .rc.cut.hot .v{color:var(--r-text)}
+.tally .trow{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--r-line)}
+.tally .trow:first-of-type{border-top:0}
+.tally .tl{flex:1;font-size:15px}
+.tally .tn{font-weight:800;font-size:20px;min-width:1.6em;text-align:center;font-variant-numeric:tabular-nums}
+.tally .tp{font-size:11px;color:var(--r-sub);min-width:4.2em;text-align:center}
+.pm{width:40px;height:40px;border-radius:10px;border:1px solid var(--r-line);background:var(--r-bg);font-size:20px;cursor:pointer}
+.r-foot{display:flex;gap:10px;padding:10px 16px 14px;border-top:1px solid var(--r-line);background:var(--r-bg)}
+.r-foot button{border:0;border-radius:14px;cursor:pointer;font-weight:700}
+#rPrev{width:84px;background:var(--r-card);border:1px solid var(--r-line);font-size:17px}
+#rNext{flex:1;background:var(--accent);color:var(--accent-ink);font-size:22px;padding:18px 0}
+#rNext:disabled{opacity:.4}
+.r-menu{display:flex;gap:8px;flex-wrap:wrap}
+.r-menu button{background:none;border:1px solid var(--r-line);border-radius:9px;padding:6px 10px;font-size:13px;color:var(--r-sub);cursor:pointer}
+.r-conn{font-size:13px;color:var(--r-sub);display:flex;align-items:center;gap:6px}
+
+/* ---------- script (print) ---------- */
+#script{max-width:860px;margin:0 auto;padding:28px 18px 60px;font-size:15px;line-height:1.6;color:var(--text)}
+#script h1{font-size:28px;margin:0 0 4px}
+#script .subt{color:var(--sub);margin:0 0 22px}
+#script h2{font-size:19px;margin:30px 0 6px;padding-top:12px;border-top:2px solid var(--line)}
+#script h2 .tm{color:var(--sub);font-weight:500;font-size:15px}
+#script table{border-collapse:collapse;width:100%;margin:10px 0 18px;font-size:14px}
+#script th,#script td{border:1px solid var(--line);padding:6px 8px;text-align:right;vertical-align:top}
+#script th{background:var(--bar)}
+#script .cutline{font-size:14px;color:var(--sub);margin:0 0 8px}
+#script .it{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:14px;padding:8px 0;border-bottom:1px solid var(--line)}
+#script .it .scr{color:var(--sub)}
+#script .it .say{font-weight:500}
+#script ul.check{padding-right:1.2em}
+.sbar{display:flex;gap:10px;margin-bottom:18px}
+.sbar button{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:8px 16px;cursor:pointer}
+.sbar button.ghost{background:none;color:var(--accent);border:1px solid var(--accent)}
+@media print{
+  .sbar{display:none}
+  body{background:#fff;color:#000;font-size:12pt}
+  #script{padding:0;max-width:none;color:#000}
+  #script h2{break-after:avoid}
+  #script .it{break-inside:avoid}
+}
+
+@media (max-width:640px){
+  #chat{padding:14px 10px 24px}
+  .bubble{max-width:92%}
+  .localbar{display:none}
+  .cover-in{gap:22px}
+  .qrbox{width:180px}
+  #script .it{grid-template-columns:1fr;gap:4px}
+}
+@media (prefers-reduced-motion:reduce){
+  .row.anim,.pill.anim,.sys.anim{animation:none}
+  .dots span{animation:none;opacity:.6}
+  .fill{transition:none}
+}
+</style>
+</head>
+<body>
+<div id="boot">טוען…</div>
+
+<!-- role picker -->
+<div id="picker" class="hidden">
+  <h1>חדר מצב 1982</h1>
+  <p id="pickerHint">בחר איך המכשיר הזה ישמש במופע.</p>
+  <div class="roles">
+    <button class="role" data-role="screen" id="roleScreen"><span class="ico">🖥️</span><b>מסך מקרן</b><span>המחשב שמחובר למקרן. מציג את הצ׳אט בגדול ומתקדם יחד עם השלט.</span></button>
+    <button class="role" data-role="remote" id="roleRemote"><span class="ico">📱</span><b>שלט (הטלפון שלי)</b><span>קובע את הקצב. שעון, מה להגיד בכל רגע, והצבעות בזמן אמת.</span></button>
+    <button class="role" data-role="viewer" id="roleViewer"><span class="ico">👥</span><b>צופה</b><span>מה שהצוערים רואים בטלפון. טוב לבדיקה.</span></button>
+    <button class="role" data-role="local" id="roleLocal"><span class="ico">⌨️</span><b>מצגת עצמאית</b><span>בלי סנכרון. מתקדמים במקלדת או בקליקר, כמו מצגת רגילה.</span></button>
+    <button class="role" data-role="script" id="roleScript"><span class="ico">📄</span><b>תסריט להדפסה</b><span>כל הסקירה על דף: זמנים, מה על המסך ומה להגיד.</span></button>
+  </div>
+</div>
+
+<!-- stage: screen / viewer / local -->
+<div id="stage" class="hidden">
+  <div class="app">
+    <header class="wa">
+      <div class="avatar" aria-hidden="true">🇮🇱</div>
+      <div class="htext">
+        <div class="hname">חדר מצב 1982</div>
+        <div class="hsub" id="hsub"></div>
+      </div>
+      <div class="tools">
+        <span class="conn hidden" id="sConn"><span class="dot" id="sDot"></span><span id="sConnTxt"></span></span>
+        <button id="fontDown" title="הקטנת טקסט" aria-label="הקטנת טקסט">א-</button>
+        <button id="fontUp" title="הגדלת טקסט" aria-label="הגדלת טקסט">א+</button>
+        <button id="themeBtn" title="מצב כהה או בהיר" aria-label="החלפת מצב תצוגה">🌓</button>
+        <button id="fsBtn" title="מסך מלא" aria-label="מסך מלא">⛶</button>
+        <button id="roleBtn" title="החלפת תפקיד" aria-label="החלפת תפקיד">⚙️</button>
+      </div>
+    </header>
+    <main id="chat" aria-live="polite"></main>
+    <div class="localbar" id="localbar">
+      <span><kbd>רווח</kbd> או <kbd>→</kbd> הבא</span>
+      <span><kbd>←</kbd> חזרה</span>
+      <span>לחיצה על אפשרות בסקר מוסיפה קול (הרמת ידיים), <kbd>Shift</kbd> ולחיצה מורידה</span>
+    </div>
+  </div>
+
+  <div id="cover">
+    <div class="cover-in">
+      <div class="cover-text">
+        <p class="l">המבצע תוכנן לימים ספורים ולעומק של 40 ק״מ.</p>
+        <p class="l">צה״ל יצא מלבנון אחרי 18 שנה.</p>
+        <p class="q">איך זה קורה?</p>
+        <div class="waitmsg hidden" id="waitMsg"></div>
+        <p class="disc">שחזור מבוים בפורמט של קבוצת וואטסאפ. האירועים והתאריכים היסטוריים. ההודעות של בעלי התפקידים מנוסחות לצורך הסקירה ואינן ציטוטים.</p>
+      </div>
+      <div class="qrbox hidden" id="qrbox"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 37" aria-label="קוד QR להצטרפות"><path fill="#fff" d="M0 0h37v37h-37z"/><path class="qrline" stroke="#111b21" d="M2 2.5h7m2 0h1m2 0h2m2 0h6m1 0h1m2 0h7m-33 1h1m5 0h1m2 0h7m1 0h1m6 0h1m1 0h1m5 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m4 0h1m2 0h3m1 0h3m3 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h5m1 0h3m3 0h3m3 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h4m1 0h1m1 0h1m1 0h2m2 0h4m1 0h1m1 0h3m1 0h1m-33 1h1m5 0h1m1 0h9m1 0h1m1 0h3m3 0h1m5 0h1m-33 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-25 1h1m1 0h1m4 0h1m5 0h3m-24 1h1m1 0h5m2 0h2m2 0h1m1 0h1m1 0h1m2 0h1m3 0h1m1 0h5m-31 1h1m6 0h2m1 0h1m3 0h3m1 0h3m2 0h1m2 0h2m1 0h4m-31 1h2m1 0h2m2 0h3m3 0h1m2 0h1m2 0h1m3 0h1m2 0h1m1 0h2m-28 1h1m2 0h1m3 0h2m1 0h1m4 0h1m1 0h1m4 0h1m1 0h5m-33 1h1m5 0h3m1 0h2m3 0h1m2 0h1m2 0h2m2 0h1m3 0h1m2 0h1m-32 1h2m2 0h1m5 0h1m2 0h3m3 0h1m2 0h1m5 0h4m-33 1h1m5 0h5m1 0h2m3 0h1m1 0h1m2 0h1m2 0h4m1 0h2m-24 1h1m3 0h1m1 0h1m1 0h1m1 0h4m1 0h1m1 0h2m2 0h2m-30 1h1m1 0h4m1 0h4m1 0h2m2 0h1m1 0h2m1 0h1m2 0h1m1 0h2m1 0h1m1 0h1m-31 1h1m1 0h1m2 0h1m1 0h1m2 0h2m1 0h6m2 0h1m2 0h2m1 0h2m-31 1h1m2 0h2m1 0h1m1 0h5m2 0h3m2 0h1m4 0h1m1 0h2m1 0h2m-29 1h3m1 0h1m1 0h1m1 0h4m1 0h3m2 0h2m1 0h7m1 0h1m-31 1h1m3 0h1m2 0h2m5 0h1m8 0h1m2 0h2m1 0h1m-32 1h3m2 0h1m1 0h1m1 0h3m2 0h2m2 0h1m2 0h5m1 0h1m1 0h2m1 0h1m-33 1h1m1 0h1m2 0h3m2 0h1m2 0h4m1 0h1m2 0h1m2 0h1m6 0h1m-32 1h1m1 0h1m4 0h1m3 0h1m2 0h2m5 0h2m1 0h8m-32 1h1m1 0h1m1 0h3m1 0h2m2 0h1m1 0h2m1 0h1m4 0h1m1 0h7m-23 1h2m1 0h1m1 0h1m4 0h3m3 0h1m3 0h1m1 0h1m-31 1h7m2 0h1m1 0h2m2 0h1m2 0h1m1 0h2m1 0h2m1 0h1m1 0h1m1 0h2m-32 1h1m5 0h1m1 0h3m4 0h2m2 0h3m1 0h2m3 0h4m-32 1h1m1 0h3m1 0h1m1 0h1m2 0h5m2 0h2m2 0h1m1 0h6m-30 1h1m1 0h3m1 0h1m1 0h4m2 0h3m7 0h2m2 0h1m1 0h3m-33 1h1m1 0h3m1 0h1m1 0h1m2 0h2m1 0h1m2 0h2m1 0h2m1 0h1m2 0h2m2 0h1m-31 1h1m5 0h1m2 0h2m2 0h1m2 0h1m2 0h1m1 0h3m2 0h1m1 0h3m-31 1h7m1 0h2m1 0h1m4 0h2m5 0h2m2 0h1m1 0h1m1 0h1"/></svg><div>סרקו כדי להצביע מהטלפון</div></div>
+    </div>
+  </div>
+
+  <div id="lesson" class="hidden"><div class="lcard" id="lcard"></div></div>
+</div>
+
+<!-- remote -->
+<div id="remote" class="hidden">
+  <div class="r-top">
+    <div class="r-row">
+      <div class="r-clock"><span id="rTotal">00:00</span> <small>/ 15:00</small></div>
+      <div class="r-status" id="rStatus"></div>
+    </div>
+    <div class="segs" id="rSegs"></div>
+    <div class="r-seg"><b id="rSegName"></b><span id="rSegLbl" style="color:var(--r-sub);font-size:13px"></span><span class="t" id="rSegTime"></span></div>
+  </div>
+  <div class="r-body">
+    <div class="rc note"><h3>מה להגיד עכשיו</h3><div class="v" id="rNote"></div></div>
+    <div class="rc"><h3>על המסך עכשיו</h3><div class="v" id="rNow"></div></div>
+    <div class="rc tally hidden" id="rTally"></div>
+    <div class="rc cut" id="rCut"><h3>אם מאחרים בחלק הזה</h3><div class="v" id="rCutTxt"></div></div>
+    <div class="rc"><h3>הבא</h3><div class="v" id="rNext2" style="color:var(--r-sub)"></div></div>
+    <div class="r-row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <span class="r-conn"><span class="dot" id="rDot"></span><span id="rConn">לא מחובר</span></span>
+      <div class="r-menu">
+        <button id="rStart">▶ התחלת שעון</button>
+        <button id="rReset">איפוס</button>
+        <button id="rRole">החלפת תפקיד</button>
+      </div>
+    </div>
+  </div>
+  <div class="r-foot">
+    <button id="rPrev" aria-label="הקודם">→ חזרה</button>
+    <button id="rNext">הבא ←</button>
+  </div>
+</div>
+
+<!-- printable script -->
+<div id="script" class="hidden"></div>
+
+<script>
+/* =====================================================================
+   התוכן. כל מה שמופיע על המסך, בשלט ובתסריט נבנה מכאן.
+   ===================================================================== */
+const PEOPLE = {
+  pm:   {name:'ראש הממשלה', color:'#e5487a'},
+  dm:   {name:'שר הביטחון', color:'#d98a1f'},
+  cos:  {name:'הרמטכ״ל',    color:'#35a0e0'},
+  intel:{name:'ראש אמ״ן',   color:'#8e6de0'},
+  news: {name:'📻 מבזק חדשות', color:'#1fa855'},
+  room: {name:'📊 חדר המצב', color:'#00a884'}
+};
+const TOTAL_SEC = 15*60;
+
+const SEGMENTS = [
+  {name:'פתיחה', budget:60,
+   cut:'לא לחכות שכולם יתחברו. מי שאין לו טלפון מצביע בהרמת יד, ואתה מוסיף את הקולות בשלט.'},
+  {name:'רקע', budget:90,
+   cut:'לקרוא רק את הכותרות. את 1976 (כניסת הסורים) אפשר לדלג בדיבור.'},
+  {name:'פרוץ המלחמה', budget:150,
+   cut:'בהצבעה הראשונה נימוק אחד בלבד, ומיד לחשוף.'},
+  {name:'מהלך הלחימה', budget:180,
+   cut:'הבופור, ערצב 19 וסולטן יעקוב: משפט אחד לכל אחד. לא לקצר את ההודעה שנמחקה ואת ההצבעה.'},
+  {name:'המצור על ביירות', budget:150,
+   cut:'אחרי ההצבעה על אלי גבע, לעבור מהר על אוגוסט–ספטמבר. רק לא לדלג על סברה ושתילה.'},
+  {name:'תוצאות', budget:60,
+   cut:'לא להרחיב על ועדת כהן. היא לא אחד הלקחים של היום.'},
+  {name:'לקחים וסגירה', budget:210,
+   cut:'את החלק הזה לא מקצרים. אם צריך לפנות זמן, מקצרים לפני כן.'}
+];
+
+const COVER_NOTE = 'לקרוא את שתי השורות, ולשאול "איך זה קורה?". לא לענות — "בסוף נדע". להגיד שזו סימולציה: האירועים אמיתיים, ההודעות מנוסחות. מי שיכול, שיסרוק את הקוד.';
+
+const ITEMS = [
+  /* ---- רקע ---- */
+  {seg:1, type:'date', text:'ספטמבר 1970'},
+  {seg:1, type:'news', text:'אש״ף מגורש מירדן ("ספטמבר השחור"). הארגונים הפלסטיניים עוברים ללבנון ומתבססים בדרומה, על הגבול עם ישראל.',
+   note:'כאן מתחילה הבעיה: אש״ף יושב על הגבול הצפוני.'},
+  {seg:1, type:'date', text:'1975–1976'},
+  {seg:1, type:'news', text:'לבנון נכנסת למלחמת אזרחים. צבא סוריה נכנס ללבנון ונשאר בה.',
+   note:'אין בלבנון שלטון מרכזי שיעצור את אש״ף, והסורים כבר בפנים.'},
+  {seg:1, type:'date', text:'1978–1981'},
+  {seg:1, type:'msg', from:'intel', text:'קטיושות מדרום לבנון נורות על קריית שמונה ויישובי הגליל. אש״ף בונה שם כוח צבאי של ממש: ארטילריה, טנקים, מחסני נשק.',
+   note:'להגיד: תושבי הצפון חיים במקלטים. זה הרקע ללחץ לפעול.'},
+  {seg:1, type:'news', text:'יולי 1981: בתיווך אמריקאי נכנסת לתוקף הפסקת אש בין ישראל לאש״ף.',
+   note:'פרט חשוב: הגבול שקט יחסית כמעט שנה. לזכור את זה בהצבעה הראשונה.'},
+
+  /* ---- פרוץ המלחמה ---- */
+  {seg:2, type:'date', text:'3 ביוני 1982'},
+  {seg:2, type:'news', text:'🔴 שגריר ישראל בבריטניה, שלמה ארגוב, נורה בלונדון ונפצע קשה.'},
+  {seg:2, type:'msg', from:'intel', text:'הירי בוצע בידי ארגון אבו נידאל, ארגון פלסטיני שנמצא בעימות עם ערפאת ועם אש״ף.',
+   note:'להדגיש: מי שירה הוא לא אש״ף.'},
+  {seg:2, type:'msg', from:'pm', text:'מבחינתנו כל ארגוני המחבלים אחראים. תושבי הגליל חיים בצל הקטיושות כבר שנים.'},
+  {seg:2, type:'msg', from:'cos', text:'התוכניות מוכנות. אפשר לצאת תוך יממות.'},
+  {seg:2, type:'poll', id:'p1', from:'room', q:'יוצאים למבצע רחב בלבנון?',
+   options:['כן, מבצע קרקעי רחב','תגובה מהאוויר בלבד','לא מגיבים צבאית'],
+   note:'30 שניות להצבעה. אחר כך שני נימוקים, אחד מכל צד (20 שניות לכל אחד). ללחוץ "הבא" כדי לסגור ולחשוף.'},
+  {seg:2, type:'date', text:'4–5 ביוני 1982'},
+  {seg:2, type:'news', text:'חיל האוויר תוקף מטרות של אש״ף בלבנון. אש״ף מגיב בירי כבד על יישובי הגליל.',
+   note:'ההצבעה נסגרה. לחשוף: הממשלה החליטה לצאת.'},
+  {seg:2, type:'msg', from:'pm', text:'הממשלה אישרה את מבצע "שלום הגליל". המטרה: להרחיק את המחבלים 40 ק״מ מהגבול, כך שיישובי הצפון יהיו מחוץ לטווח.',
+   note:'לעצור על המספר: 40 ק״מ. זו המטרה המוצהרת, ונחזור אליה.'},
+  {seg:2, type:'date', text:'6 ביוני 1982'},
+  {seg:2, type:'msg', from:'cos', text:'הכוחות חצו את הגבול. מתקדמים בכמה צירים במקביל.'},
+
+  /* ---- מהלך הלחימה ---- */
+  {seg:3, type:'date', text:'7 ביוני 1982'},
+  {seg:3, type:'news', text:'מבצר הבופור נכבש בידי סיירת גולני. שישה לוחמים נפלו, ביניהם גוני הרניק, מפקד הסיירת לשעבר.',
+   note:'משפט אחד. הבופור הפך לסמל של המלחמה.'},
+  {seg:3, type:'date', text:'9 ביוני 1982'},
+  {seg:3, type:'news', text:'✈️ מבצע ערצב 19: חיל האוויר משמיד את רוב מערך טילי הקרקע־אוויר הסורי בבקעת הלבנון. עשרות מטוסים סוריים מופלים, בלי אבדות מטוסים לישראל.',
+   note:'לקהל שלנו: מודיעין, לוחמה אלקטרונית וכטב״מים הכריעו כאן. הישג טכנולוגי מבריק.'},
+  {seg:3, type:'date', text:'10–11 ביוני 1982'},
+  {seg:3, type:'news', text:'קרב שריון קשה מול הסורים בסולטן יעקוב. שלושה לוחמים נעדרים.',
+   note:'זכריה באומל, צבי פלדמן ויהודה כץ. שרידיו של באומל הושבו רק ב־2019.'},
+  {seg:3, type:'msg', from:'pm', text:'היעד של 40 ק״מ הושג?'},
+  {seg:3, type:'deleted', from:'dm',
+   note:'לעצור. לשאול: "מה לדעתכם היה כתוב בהודעה שנמחקה?" 10 שניות, בלי דיון. להגיד: נחזור לזה בלקחים. (זו המחשה, לא ציטוט.)'},
+  {seg:3, type:'msg', from:'dm', text:'הכוחות ממשיכים להתקדם. כל עוד אש״ף יושב בביירות, האיום לא הוסר.'},
+  {seg:3, type:'poll', id:'p2', from:'room', q:'היעד המוצהר הושג. מה עכשיו?',
+   options:['עוצרים ומתבצרים ב־40 ק״מ','ממשיכים עד כביש ביירות–דמשק','ממשיכים עד ביירות'],
+   note:'30 שניות להצבעה, ואז שני נימוקים. לשאול מי שבחר "להמשיך": איפה הייתם עוצרים?'},
+  {seg:3, type:'news', text:'צה״ל ממשיך צפונה. הכוחות מגיעים לכביש ביירות–דמשק ולפאתי ביירות.',
+   note:'לחשוף. להגיד: לא הייתה החלטה אחת גדולה ללכת לביירות. היו הרבה צעדים קטנים, וכל אחד נראה הגיוני.'},
+
+  /* ---- המצור על ביירות ---- */
+  {seg:4, type:'date', text:'יולי 1982'},
+  {seg:4, type:'news', text:'ביירות במצור. הפגזות כבדות על מערב העיר, שבו מתבצרים אש״ף והנהגתו.'},
+  {seg:4, type:'news', text:'אל״מ אלי גבע, מפקד חטיבת שריון, מבקש להשתחרר מפיקוד על החטיבה. הוא לא מוכן להוביל את חייליו לתוך העיר.',
+   note:'להציג אותו בהגינות: קצין מצטיין, לא סרבן. הוא ביקש להמשיך להילחם כמפקד טנק.'},
+  {seg:4, type:'poll', id:'p3', from:'room', q:'מה הייתם עושים במקומו?',
+   options:['מבצעים את הפקודה','מבקשים להשתחרר מפיקוד','מתריעים בפני הממונים וממשיכים'],
+   note:'ההצבעה החשובה של היום. שני נימוקים, ואז שאלה אחת: "ומה הייתם עושים כמפקדים שלו?"'},
+  {seg:4, type:'news', text:'בקשתו של גבע נדחתה, והוא שוחרר משירות בצה״ל.',
+   note:'לחשוף. להשאיר את זה פתוח, נחזור אליו בלקח השלישי.'},
+  {seg:4, type:'date', text:'אוגוסט 1982'},
+  {seg:4, type:'news', text:'לוחמי אש״ף והנהגתו מפונים מביירות בפיקוח כוח רב־לאומי. ערפאת עוזב, ובסוף מגיע לתוניס.'},
+  {seg:4, type:'news', text:'באשיר ג׳ומייל, מנהיג הנוצרים המרונים ובעל ברית של ישראל, נבחר לנשיא לבנון.',
+   note:'לכאורה, הכול הצליח: אש״ף יצא, ויש בלבנון נשיא ידידותי.'},
+  {seg:4, type:'date', text:'14 בספטמבר 1982'},
+  {seg:4, type:'news', text:'🔴 באשיר ג׳ומייל נרצח בפיצוץ במטה מפלגתו.'},
+  {seg:4, type:'date', text:'16–18 בספטמבר 1982'},
+  {seg:4, type:'news', text:'🔴 כוחות הפלנגות נכנסים למחנות הפליטים סברה ושתילה, באזור שבשליטת צה״ל. מאות אזרחים נרצחים.',
+   note:'לומר בשקט ולא להאיץ. זה האירוע ששינה את דעת הקהל.'},
+
+  /* ---- תוצאות ---- */
+  {seg:5, type:'date', text:'25 בספטמבר 1982'},
+  {seg:5, type:'news', text:'מאות אלפי מפגינים בתל אביב דורשים ועדת חקירה ממלכתית.'},
+  {seg:5, type:'date', text:'פברואר 1983'},
+  {seg:5, type:'news', text:'ועדת כהן: לדרג המדיני והצבאי אחריות עקיפה לטבח. הוועדה ממליצה ששר הביטחון יסיק מסקנות אישיות.'},
+  {seg:5, type:'system', text:'שר הביטחון עזב את הקבוצה', leaves:'dm'},
+  {seg:5, type:'date', text:'1985'},
+  {seg:5, type:'news', text:'צה״ל נסוג לרצועת הביטחון בדרום לבנון. באותן שנים קם ומתחזק חיזבאללה.'},
+  {seg:5, type:'date', text:'24 במאי 2000'},
+  {seg:5, type:'news', text:'צה״ל יוצא מלבנון, 18 שנה אחרי שחצה את הגבול.',
+   note:'לעצור. להזכיר את שאלת הפתיחה: איך זה קרה? ולעבור ללקחים.'},
+
+  /* ---- לקחים ---- */
+  {seg:6, type:'lesson', n:1,
+   title:'כל צעד נראה הגיוני. הסכום הוא 18 שנה.',
+   body:'אף החלטה במלחמה הזאת לא נראתה קיצונית ברגע שבו התקבלה. לכן בכל שלב עוצרים ושואלים: האם זו עדיין המשימה שקיבלנו?',
+   moment:{cap:'הרגע:', from:'room', text:'📊 היעד המוצהר הושג. מה עכשיו?'},
+   note:'לחבר להצבעה השנייה: "כמה מכם בחרו להמשיך? זה בדיוק העניין." משפט אחד על מה זה אומר לנו כקצינים: לחזור למשימה ולשאול אם היא עדיין אותה משימה.'},
+  {seg:6, type:'lesson', n:2,
+   title:'מדווחים אמת כלפי מעלה, גם כשהיא לא נוחה.',
+   body:'מי שמחזיק במידע ולא מעביר אותו לוקח מהממונה את היכולת להחליט. דיווח חלקי הוא החלטה בשם מישהו אחר.',
+   moment:{cap:'הרגע:', from:'dm', deleted:true},
+   note:'לחזור לשאלה "מה היה כתוב שם?". להגיד: היסטוריונים טענו שהקבינט אישר מהלכים שלב אחר שלב בלי תמונה מלאה, ושר הביטחון חלק על כך. הלקח לא תלוי בוויכוח הזה.'},
+  {seg:6, type:'lesson', n:3,
+   title:'כשקצין טוב מבקש לרדת מפיקוד, זו נורה אדומה.',
+   body:'הבקשה של אלי גבע הייתה איתות מהשטח שמשהו השתבש. מפקד צריך להקשיב לאיתות, לא רק לטפל במי שהעלה אותו.',
+   moment:{cap:'הרגע:', from:'news', text:'אל״מ אלי גבע מבקש להשתחרר מפיקוד על החטיבה.'},
+   note:'לחזור לשאלה "מה הייתם עושים כמפקדים שלו?". להגיד: אנחנו נהיה בשני הצדדים, גם זה שמאותת וגם זה שצריך להקשיב.'},
+  {seg:6, type:'closing',
+   q:'אז איך מבצע של 40 ק״מ הפך ל־18 שנה?',
+   answer:'צעד אחר צעד, כשכל צעד נראה הגיוני, כשהמידע לא עלה במלואו למעלה, וכשאיתותי האזהרה לא נשמעו.',
+   note:'לקרוא את התשובה ולסיים. תודה, ולעבור למשוב.'}
+];
+
+/* =====================================================================
+   מנוע
+   ===================================================================== */
+ITEMS.forEach(it=>{ if(it.type==='news' && !it.from) it.from = 'news'; });
+const N = ITEMS.length;
+const RID = Math.random().toString(36).slice(2,10);
+const LS_STATE = 'lb82-state', LS_ROLE = 'lb82-role', LS_FS = 'lb82-fs-';
+const $ = id => document.getElementById(id);
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+
+// deterministic clock times for bubbles
+const TIMES = (()=>{ let t = 8*60+12; return ITEMS.map((it,i)=>{ t += 2 + (i*5)%7; return String(Math.floor(t/60)%24).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }); })();
+const POLL_IDX = {}; ITEMS.forEach((it,i)=>{ if(it.type==='poll') POLL_IDX[it.id]=i; });
+
+function blankState(seq){ return {seq:seq||0, rid:RID, step:0, started:null, segStart:{}, manual:{}, frozen:{}}; }
+let state = blankState(0);
+let mode = null;            // screen | remote | viewer | local | script
+let room = null, userNs = null, isAdmin = false, connected = false;
+let myVote = null;          // {p, o}
+let gotRemoteState = false;
+
+function segOf(step){ return step===0 ? 0 : ITEMS[step-1].seg; }
+function livePollId(step){ const it = ITEMS[step-1]; return it && it.type==='poll' ? it.id : null; }
+function isController(){ return mode==='screen' || mode==='remote' || mode==='local'; }
+function newer(a,b){ return a.seq>b.seq || (a.seq===b.seq && a.rid>b.rid); }
+
+/* ---------- validation of incoming state (untrusted) ---------- */
+function intArr(a,len){ if(!Array.isArray(a)) return null; const r=[]; for(let i=0;i<len;i++){ const v=a[i]; r.push(Number.isFinite(v)&&v>=0&&v<1000?Math.floor(v):0); } return r; }
+function clean(d){
+  if(!d || typeof d!=='object') return null;
+  if(!Number.isInteger(d.seq) || d.seq<0 || typeof d.rid!=='string') return null;
+  if(!Number.isInteger(d.step) || d.step<0 || d.step>N) return null;
+  const s = blankState(d.seq); s.rid = d.rid.slice(0,20); s.step = d.step;
+  s.started = Number.isFinite(d.started) ? d.started : null;
+  if(d.segStart && typeof d.segStart==='object') for(let i=0;i<SEGMENTS.length;i++){ const v=d.segStart[i]; if(Number.isFinite(v)) s.segStart[i]=v; }
+  for(const pid in POLL_IDX){ const len = ITEMS[POLL_IDX[pid]].options.length;
+    if(d.manual && d.manual[pid]){ const a=intArr(d.manual[pid],len); if(a) s.manual[pid]=a; }
+    if(d.frozen && d.frozen[pid]){ const a=intArr(d.frozen[pid],len); if(a) s.frozen[pid]=a; } }
+  return s;
+}
+
+/* ---------- votes ---------- */
+function liveCounts(pid){
+  const len = ITEMS[POLL_IDX[pid]].options.length, c = new Array(len).fill(0);
+  if(room){ for(const p of room.peers()){ const pr=p.presence||{}; const v=pr.vote;
+    if(pr.role!=='viewer' || !v || v.p!==pid) continue;
+    if(Number.isInteger(v.o) && v.o>=0 && v.o<len) c[v.o]++; } }
+  else if(mode==='viewer' && myVote && myVote.p===pid) c[myVote.o]++;
+  return c;
+}
+function tally(pid){
+  const len = ITEMS[POLL_IDX[pid]].options.length;
+  const base = state.frozen[pid] || liveCounts(pid), man = state.manual[pid] || new Array(len).fill(0);
+  return {phone: base, manual: man, total: base.map((v,i)=>v+(man[i]||0))};
+}
+function viewerCount(){ if(!room) return 0; return room.peers().filter(p=>(p.presence||{}).role==='viewer').length; }
+
+/* ---------- state changes ---------- */
+function commit(mut){
+  const s = clean(JSON.parse(JSON.stringify(state))) || blankState(state.seq);
+  const oldLive = livePollId(state.step);
+  mut(s);
+  const now = Date.now(), newLive = livePollId(s.step);
+  if(oldLive && oldLive!==newLive && !s.frozen[oldLive]) s.frozen[oldLive] = liveCounts(oldLive);
+  if(newLive) delete s.frozen[newLive];
+  if(s.step>0 && !s.started){ s.started = now; s.segStart = {0:now}; }
+  const sg = segOf(s.step); if(s.started && s.segStart[sg]==null) s.segStart[sg] = now;
+  s.seq = state.seq + 1; s.rid = RID;
+  applyState(s);
+  broadcast();
+  if(mode!=='local') lsSet(LS_STATE, JSON.stringify({s, at:now}));
+}
+function go(d){ const target = Math.max(0, Math.min(N, state.step + d)); if(target===state.step) return; commit(s=>{ s.step = target; }); }
+function addManual(pid,i,d){ commit(s=>{ const len=ITEMS[POLL_IDX[pid]].options.length; const a = s.manual[pid] || new Array(len).fill(0); a[i]=Math.max(0,(a[i]||0)+d); s.manual[pid]=a; }); }
+
+function broadcast(){
+  if(!room || !isAdmin || mode==='local' || mode==='viewer' || !room.connected()) return;
+  room.emit('state', state).catch(()=>{});
+}
+let bcTimer = null;
+function scheduleBroadcast(){ if(bcTimer) return; bcTimer = setTimeout(()=>{ bcTimer=null; broadcast(); }, 200 + Math.random()*600); }
+
+function applyState(s){
+  const prevStep = state.step;
+  state = s;
+  if(mode==='remote') renderRemote();
+  else if(mode==='screen' || mode==='viewer' || mode==='local') renderStage(prevStep);
+}
+
+/* =====================================================================
+   Stage rendering (chat)
+   ===================================================================== */
+const chat = $('chat');
+let rendered = -1, lastFrom = null, typingTimer = null;
+
+function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function membersAt(step){ const gone = new Set(); for(let i=0;i<step;i++) if(ITEMS[i].leaves) gone.add(ITEMS[i].leaves); return ['pm','dm','cos','intel'].filter(k=>!gone.has(k)); }
+function setSub(step){ const h=$('hsub'); h.classList.remove('typing'); h.textContent = membersAt(step).map(k=>PEOPLE[k].name).join(', ') + ', ' + PEOPLE.news.name; }
+function isChatItem(it){ return it.type!=='lesson' && it.type!=='closing'; }
+
+function makeNode(i, anim){
+  const it = ITEMS[i];
+  if(it.type==='date'){ const e=document.createElement('div'); e.className='pill'+(anim?' anim':''); e.textContent=it.text; lastFrom=null; return e; }
+  if(it.type==='system'){ const e=document.createElement('div'); e.className='sys'+(anim?' anim':''); e.textContent=it.text; lastFrom=null; return e; }
+  const p = PEOPLE[it.from];
+  const row = document.createElement('div');
+  row.className = 'row' + (lastFrom===it.from ? ' cont' : '') + (anim?' anim':'');
+  const b = document.createElement('div'); b.className='bubble';
+  let html = lastFrom!==it.from ? `<div class="sender" style="color:${p.color}">${esc(p.name)}</div>` : '';
+  if(it.type==='deleted') html += `<span class="deleted">🚫 הודעה זו נמחקה</span>`;
+  else if(it.type==='poll'){
+    b.classList.add('poll'); b.id = 'poll-'+it.id;
+    html += `<div class="pq">${esc(it.q)}</div><div class="phint" id="hint-${it.id}"></div>`;
+    it.options.forEach((o,k)=>{ html += `<button class="opt" data-p="${it.id}" data-i="${k}"><div class="oline"><span class="circle"></span><span class="olabel">${esc(o)}</span><span class="ocount">0</span></div><div class="track"><div class="fill"></div></div></button>`; });
+  } else html += esc(it.text);
+  html += `<span class="meta">${TIMES[i]}</span>`;
+  b.innerHTML = html;
+  row.appendChild(b);
+  lastFrom = it.from;
+  return row;
+}
+
+function chatLimit(step){ let k=0; for(let i=0;i<step;i++) if(isChatItem(ITEMS[i])) k=i+1; return k; }
+
+function rebuild(step){
+  if(typingTimer){ clearTimeout(typingTimer); typingTimer=null; }
+  chat.innerHTML=''; lastFrom=null;
+  const lim = chatLimit(step);
+  for(let i=0;i<lim;i++) chat.appendChild(makeNode(i,false));
+  rendered = lim;
+  setSub(step);
+}
+function scrollDown(){ chat.scrollTo({top:chat.scrollHeight, behavior: reduced()?'auto':'smooth'}); }
+
+function renderStage(prevStep){
+  const step = state.step;
+  const lim = chatLimit(step);
+  const it = ITEMS[step-1];
+  const oneMore = (step===prevStep+1) && it && isChatItem(it) && rendered===step-1 && !typingTimer;
+  if(oneMore){
+    const needsTyping = ['msg','news','poll','deleted'].includes(it.type) && !reduced();
+    const place = ()=>{ chat.appendChild(makeNode(step-1,true)); rendered = step; setSub(step); updatePolls(); scrollDown(); };
+    if(needsTyping){
+      const h=$('hsub'); h.textContent = PEOPLE[it.from].name.replace(/^[^֐-׿A-Za-z]+/,'') + ' מקליד/ה…'; h.classList.add('typing');
+      const row=document.createElement('div'); row.className='row typingrow';
+      row.innerHTML='<div class="bubble"><span class="dots"><span></span><span></span><span></span></span></div>';
+      chat.appendChild(row); scrollDown();
+      typingTimer = setTimeout(()=>{ typingTimer=null; row.remove(); place(); }, 550);
+    } else place();
+  } else if(rendered!==lim || step!==prevStep){
+    rebuild(step); updatePolls(); chat.scrollTop = chat.scrollHeight;
+  } else updatePolls();
+
+  // cover
+  $('cover').classList.toggle('hidden', step!==0);
+  const wait = $('waitMsg');
+  if(mode==='viewer'){
+    wait.classList.remove('hidden');
+    wait.textContent = !room ? 'הסנכרון לא זמין במכשיר הזה. עקבו אחרי המסך המרכזי.'
+      : (connected ? (gotRemoteState ? 'המציג יתחיל בעוד רגע.' : 'מחוברים. ממתינים למציג…') : 'מתחברים…');
+  } else wait.classList.add('hidden');
+  $('qrbox').classList.toggle('hidden', mode!=='screen');
+
+  // lesson overlay
+  const lv = $('lesson');
+  if(it && !isChatItem(it)){ lv.classList.remove('hidden'); renderLesson(it); }
+  else lv.classList.add('hidden');
+}
+
+function renderLesson(it){
+  const c = $('lcard');
+  if(it.type==='closing'){
+    const titles = ITEMS.filter(x=>x.type==='lesson').map(x=>`<li>${esc(x.title)}</li>`).join('');
+    c.innerHTML = `<div class="lpin">📌 סיכום</div><h2 class="ltitle">${esc(it.q)}</h2><p class="lbody">${esc(it.answer)}</p><div class="closing"><ol>${titles}</ol></div>`;
+    return;
+  }
+  const m = it.moment, p = PEOPLE[m.from];
+  const inner = m.deleted ? '<span class="deleted">🚫 הודעה זו נמחקה</span>' : esc(m.text);
+  c.innerHTML = `<div class="lpin">📌 לקח ${it.n} מתוך 3</div><h2 class="ltitle">${esc(it.title)}</h2><p class="lbody">${esc(it.body)}</p>
+    <div class="lmoment"><span class="cap">${esc(m.cap)}</span><div class="bubble"><div class="sender" style="color:${p.color}">${esc(p.name)}</div>${inner}</div></div>`;
+}
+
+function updatePolls(){
+  const live = livePollId(state.step);
+  for(const pid in POLL_IDX){
+    const b = document.getElementById('poll-'+pid); if(!b) continue;
+    const t = tally(pid), sum = t.total.reduce((a,c)=>a+c,0);
+    b.querySelectorAll('.opt').forEach((o,i)=>{
+      o.querySelector('.ocount').textContent = t.total[i];
+      o.querySelector('.fill').style.width = sum ? (t.total[i]/sum*100)+'%' : '0';
+      o.classList.toggle('mine', mode==='viewer' && !!myVote && myVote.p===pid && myVote.o===i);
+    });
+    const open = live===pid;
+    b.classList.toggle('votable', mode==='viewer' && open && !!room);
+    const hint = document.getElementById('hint-'+pid);
+    if(hint) hint.textContent = open
+      ? (mode==='viewer' ? (myVote&&myVote.p===pid ? 'ההצבעה שלך נקלטה. אפשר לשנות.' : 'בחרו אפשרות אחת') : `${sum} הצבעות`)
+      : `ההצבעה נסגרה · ${sum} הצבעות`;
+  }
+}
+
+chat.addEventListener('click', e=>{
+  const opt = e.target.closest('.opt');
+  if(opt){
+    e.stopPropagation();
+    const pid = opt.dataset.p, i = +opt.dataset.i;
+    if(mode==='viewer'){
+      if(livePollId(state.step)!==pid || !room) return;
+      myVote = {p:pid, o:i};
+      room.presence({role:'viewer', vote:myVote}).catch(()=>{});
+      updatePolls();
+    } else if(isController()) addManual(pid, i, e.shiftKey?-1:1);
+    return;
+  }
+  if(mode==='screen' || mode==='local') go(1);
+});
+$('lesson').addEventListener('click', ()=>{ if(mode==='screen'||mode==='local') go(1); });
+$('cover').addEventListener('click', ()=>{ if(mode==='screen'||mode==='local') go(1); });
+
+document.addEventListener('keydown', e=>{
+  if(!(mode==='screen' || mode==='local')) return;
+  if(e.target.closest && e.target.closest('.opt') && (e.key===' '||e.key==='Enter')) return;
+  if([' ','ArrowRight','PageDown','Enter'].includes(e.key)){ e.preventDefault(); go(1); }
+  else if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){ e.preventDefault(); go(-1); }
+  else if(e.key==='+'||e.key==='='){ changeFs(2); }
+  else if(e.key==='-'){ changeFs(-2); }
+  else if(e.key==='f'||e.key==='F'){ toggleFs(); }
+});
+
+let fs = 19;
+function changeFs(d){ fs=Math.min(40,Math.max(13,fs+d)); document.body.style.setProperty('--fs', fs+'px'); lsSet(LS_FS+mode, String(fs)); }
+function toggleFs(){ try{ if(!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); }catch(e){} }
+$('fontUp').onclick = ()=>changeFs(2);
+$('fontDown').onclick = ()=>changeFs(-2);
+$('fsBtn').onclick = toggleFs;
+$('themeBtn').onclick = ()=>{ const r=document.documentElement; const cur=r.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'); r.dataset.theme = cur==='dark'?'light':'dark'; };
+$('roleBtn').onclick = ()=>showPicker();
+
+/* =====================================================================
+   Remote
+   ===================================================================== */
+function fmt(ms){ const s=Math.max(0,Math.round(ms/1000)); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function fmtSigned(ms){ const s=Math.round(Math.abs(ms)/1000); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function preview(i){
+  if(i<0) return 'מסך הפתיחה: "איך זה קורה?"';
+  const it = ITEMS[i]; if(!it) return 'סוף';
+  switch(it.type){
+    case 'date': return '📅 '+it.text;
+    case 'msg': return PEOPLE[it.from].name+': '+it.text;
+    case 'news': return PEOPLE.news.name+': '+it.text;
+    case 'deleted': return PEOPLE[it.from].name+': 🚫 הודעה זו נמחקה';
+    case 'poll': return '📊 סקר: '+it.q;
+    case 'system': return it.text;
+    case 'lesson': return '📌 לקח '+it.n+': '+it.title;
+    case 'closing': return '📌 סיכום: '+it.q;
+  }
+}
+function noteFor(step){
+  if(step===0) return COVER_NOTE;
+  const it = ITEMS[step-1];
+  return it.note || (it.type==='date' ? 'לקרוא את התאריך ולהמשיך.' : 'להקריא בקצרה ולהמשיך.');
+}
+function timing(){
+  const now = Date.now(), st = state.started;
+  const cur = segOf(state.step);
+  if(!st) return {started:false, cur, elapsed:0, segEl:0, delta:0};
+  const elapsed = now - st;
+  const segEl = now - (state.segStart[cur] ?? st);
+  let remain = Math.max(0, SEGMENTS[cur].budget*1000 - segEl);
+  for(let s=cur+1;s<SEGMENTS.length;s++) remain += SEGMENTS[s].budget*1000;
+  return {started:true, cur, elapsed, segEl, delta: elapsed + remain - TOTAL_SEC*1000};
+}
+function renderClock(){
+  if(mode!=='remote') return;
+  const t = timing(), seg = SEGMENTS[t.cur];
+  $('rTotal').textContent = fmt(t.elapsed);
+  const st = $('rStatus');
+  if(!t.started){ st.innerHTML = '<span style="color:var(--r-sub)">השעון לא התחיל</span>'; }
+  else if(t.delta > 10000){ st.innerHTML = `<span class="st-bad">מאחור ב־${fmtSigned(t.delta)}</span><span class="s">לקצר לפני הלקחים</span>`; }
+  else if(t.delta < -20000){ st.innerHTML = `<span class="st-ok">מקדים ב־${fmtSigned(t.delta)}</span><span class="s">אפשר לתת עוד נימוק</span>`; }
+  else { st.innerHTML = `<span class="st-ok">בזמן</span><span class="s">צפי סיום 15:00</span>`; }
+  $('rSegName').textContent = seg.name;
+  $('rSegLbl').textContent = `חלק ${t.cur+1} מתוך ${SEGMENTS.length}`;
+  const segT = $('rSegTime'), bud = seg.budget*1000;
+  segT.textContent = `${fmt(t.segEl)} / ${fmt(bud)}`;
+  segT.className = 't ' + (!t.started ? '' : t.segEl > bud ? 'st-bad' : t.segEl > bud*0.8 ? 'st-warn' : 'st-ok');
+  $('rCut').classList.toggle('hot', t.started && (t.delta>10000 || t.segEl>bud));
+  $('rSegs').innerHTML = SEGMENTS.map((s,i)=>`<div class="seg ${i<t.cur?'done':i===t.cur?'cur':''}" title="${esc(s.name)}"></div>`).join('');
+}
+function renderRemote(){
+  const step = state.step;
+  $('rNote').textContent = noteFor(step);
+  $('rNow').textContent = preview(step-1);
+  $('rNext2').textContent = step>=N ? 'זה הסוף. לעבור למשוב.' : preview(step);
+  $('rCutTxt').textContent = SEGMENTS[segOf(step)].cut;
+  $('rNext').disabled = step>=N;
+  $('rStart').classList.toggle('hidden', !!state.started);
+  renderTally();
+  renderClock();
+  renderConn();
+}
+function renderTally(){
+  const box = $('rTally');
+  // show the most recent poll of the current segment
+  let pid = null; const cur = segOf(state.step);
+  for(let i=state.step-1;i>=0;i--){ if(ITEMS[i].seg!==cur) break; if(ITEMS[i].type==='poll'){ pid = ITEMS[i].id; break; } }
+  if(!pid){ box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  const it = ITEMS[POLL_IDX[pid]], t = tally(pid), live = livePollId(state.step)===pid;
+  const sum = t.total.reduce((a,c)=>a+c,0);
+  box.innerHTML = `<h3>${live?'🟢 הצבעה פתוחה':'ההצבעה נסגרה'} · ${esc(it.q)} · ${sum} קולות</h3>` +
+    it.options.map((o,i)=>`<div class="trow"><span class="tl">${esc(o)}</span><span class="tp">📱 ${t.phone[i]} · ✋ ${t.manual[i]||0}</span>
+      <button class="pm" data-p="${pid}" data-i="${i}" data-d="-1" aria-label="הורדת יד">−</button><span class="tn">${t.total[i]}</span>
+      <button class="pm" data-p="${pid}" data-i="${i}" data-d="1" aria-label="הוספת יד">+</button></div>`).join('') +
+    `<div style="font-size:12px;color:var(--r-sub);margin-top:6px">✋ = הרמת ידיים שאתה מוסיף. 📱 = הצבעות מהטלפונים.</div>`;
+}
+$('rTally').addEventListener('click', e=>{ const b=e.target.closest('.pm'); if(!b) return; addManual(b.dataset.p, +b.dataset.i, +b.dataset.d); });
+$('rNext').onclick = ()=>go(1);
+$('rPrev').onclick = ()=>go(-1);
+$('rStart').onclick = ()=>commit(s=>{ const now=Date.now(); s.started=now; s.segStart={0:now}; });
+$('rReset').onclick = ()=>{
+  let ok = true; try{ ok = confirm('לאפס את המופע? השעון, ההצבעות והמיקום יתאפסו בכל המכשירים.'); }catch(e){}
+  if(ok) commit(s=>{ s.step=0; s.started=null; s.segStart={}; s.manual={}; s.frozen={}; });
+};
+$('rRole').onclick = ()=>showPicker();
+setInterval(renderClock, 1000);
+
+function renderConn(){
+  const n = viewerCount();
+  const txt = !room ? 'אין סנכרון במכשיר הזה' : connected ? `מחובר · ${n} צופים בטלפון` : 'מתחבר…';
+  if(mode==='remote'){ $('rConn').textContent = txt; $('rDot').classList.toggle('on', !!room && connected); }
+  const sc = $('sConn');
+  if(mode==='screen' || mode==='viewer'){
+    sc.classList.remove('hidden');
+    $('sDot').classList.toggle('on', !!room && connected);
+    $('sConnTxt').textContent = mode==='screen' ? (room ? (connected ? `${n} בטלפון` : 'מתחבר…') : 'ללא סנכרון') : (room ? (connected ? 'מחובר' : 'מתחבר…') : 'ללא סנכרון');
+  } else sc.classList.add('hidden');
+}
+
+/* =====================================================================
+   Printable script
+   ===================================================================== */
+function renderScript(){
+  let cum = 0;
+  const rows = SEGMENTS.map((s,i)=>{ const a=cum; cum+=s.budget; return `<tr><td>${i+1}. ${esc(s.name)}</td><td>${fmt(s.budget*1000)}</td><td><span dir="ltr">${fmt(a*1000)}–${fmt(cum*1000)}</span></td></tr>`; }).join('');
+  let html = `<div class="sbar"><button onclick="window.print()">הדפסה</button><button class="ghost" id="scriptBack">חזרה</button></div>
+  <h1>חדר מצב 1982: תסריט הנחיה</h1>
+  <p class="subt">מלחמת לבנון הראשונה · 15 דקות · שלוש נקודות החלטה · שלושה לקחים</p>
+  <h2>חלוקת הזמנים</h2>
+  <table><tr><th>חלק</th><th>זמן</th><th>מתי</th></tr>${rows}<tr><th>סה״כ</th><th>15:00</th><th></th></tr></table>
+  <h2>לפני המופע</h2>
+  <ul class="check">
+    <li>במחשב שמחובר למקרן: לפתוח את הקישור ולבחור <b>מסך מקרן</b>. להיכנס למסך מלא.</li>
+    <li>בטלפון שלך: לפתוח את אותו קישור, מחובר לאותו חשבון, ולבחור <b>שלט</b>. ללחוץ "הבא" פעם אחת ולוודא שהמסך זז, ואז <b>איפוס</b>.</li>
+    <li>צוערים שיצביעו מהטלפון צריכים חשבון Claude ושיתוף של הקישור אליהם. מי שלא, מצביע בהרמת יד ואתה מוסיף ב־✋.</li>
+    <li>גיבוי: אם הסנכרון לא עובד, במחשב לבחור <b>מצגת עצמאית</b> ולהתקדם במקלדת או בקליקר.</li>
+    <li>לכבות נעילת מסך אוטומטית בטלפון ובמחשב.</li>
+  </ul>
+  <h2>0. פתיחה <span class="tm">· ${fmt(SEGMENTS[0].budget*1000)}</span></h2>
+  <p class="cutline">אם מאחרים: ${esc(SEGMENTS[0].cut)}</p>
+  <div class="it"><div class="scr">מסך הפתיחה: "איך זה קורה?"</div><div class="say">${esc(COVER_NOTE)}</div></div>`;
+  for(let s=1;s<SEGMENTS.length;s++){
+    html += `<h2>${s}. ${esc(SEGMENTS[s].name)} <span class="tm">· ${fmt(SEGMENTS[s].budget*1000)}</span></h2><p class="cutline">אם מאחרים: ${esc(SEGMENTS[s].cut)}</p>`;
+    ITEMS.forEach((it,i)=>{ if(it.seg!==s || it.type==='date') return;
+      let scr = preview(i);
+      if(it.type==='poll') scr += ' — ' + it.options.join(' / ');
+      if(it.type==='lesson') scr += ' — ' + it.body;
+      if(it.type==='closing') scr += ' — ' + it.answer;
+      const date = (ITEMS[i-1]&&ITEMS[i-1].type==='date') ? `<b>${esc(ITEMS[i-1].text)}</b> · ` : '';
+      html += `<div class="it"><div class="scr">${date}${esc(scr)}</div><div class="say">${it.note?esc(it.note):''}</div></div>`;
+    });
+  }
+  $('script').innerHTML = html;
+  $('scriptBack').onclick = ()=>showPicker();
+}
+
+/* =====================================================================
+   Modes
+   ===================================================================== */
+function showPicker(){
+  for(const id of ['stage','remote','script']) $(id).classList.add('hidden');
+  document.body.classList.remove('ctl');
+  $('picker').classList.remove('hidden');
+  const noSync = !room;
+  $('roleScreen').classList.toggle('hidden', !isAdmin || noSync);
+  $('roleRemote').classList.toggle('hidden', !isAdmin || noSync);
+  $('roleViewer').classList.toggle('hidden', !isAdmin || noSync);
+  $('roleScript').classList.toggle('hidden', !isAdmin && !!window.claude);
+  $('pickerHint').textContent = noSync
+    ? 'הסנכרון לא זמין במכשיר הזה. אפשר להריץ את הסקירה כמצגת עצמאית.'
+    : 'בחר איך המכשיר הזה ישמש במופע. המחשב במקרן: "מסך מקרן". הטלפון שלך: "שלט".';
+}
+
+function setMode(m){
+  mode = m;
+  if(isAdmin) lsSet(LS_ROLE, m);
+  $('picker').classList.add('hidden'); $('boot').classList.add('hidden');
+  for(const id of ['stage','remote','script']) $(id).classList.add('hidden');
+  document.body.classList.toggle('ctl', m==='screen' || m==='local');
+  if(m==='script'){ renderScript(); $('script').classList.remove('hidden'); return; }
+
+  // state source
+  if(m==='local'){ state = blankState(0); }
+  else if(m==='screen' || m==='remote'){
+    const saved = (()=>{ try{ return JSON.parse(lsGet(LS_STATE)||'null'); }catch(e){ return null; } })();
+    const s = saved && Date.now()-saved.at < 3*3600*1000 ? clean(saved.s) : null;
+    if(s && newer(s, state)) state = s;
+  }
+  if(room) room.presence({role: m, vote: m==='viewer' ? myVote : null}).catch(()=>{});
+
+  if(m==='remote'){ $('remote').classList.remove('hidden'); renderRemote(); scheduleBroadcast(); return; }
+  $('stage').classList.remove('hidden');
+  document.body.style.setProperty('--maxw', m==='screen' ? '1200px' : '900px');
+  fs = +(lsGet(LS_FS+m) || (m==='screen' ? 25 : m==='viewer' ? 17 : 21));
+  document.body.style.setProperty('--fs', fs+'px');
+  $('localbar').classList.toggle('hidden', m==='viewer' || m==='remote');
+  $('roleBtn').classList.toggle('hidden', !(isAdmin || m==='local' || !room));
+  for(const id of ['fontUp','fontDown','fsBtn']) $(id).classList.toggle('hidden', m==='viewer');
+  rendered = -1; renderStage(state.step);
+  renderConn();
+  if(m==='screen') scheduleBroadcast();
+}
+document.querySelectorAll('.role').forEach(b=>b.addEventListener('click', ()=>setMode(b.dataset.role)));
+
+/* =====================================================================
+   Boot
+   ===================================================================== */
+async function boot(){
+  const c = window.claude;
+  if(!c || typeof c.use!=='function'){ // opened as a plain file: no sync
+    isAdmin = true; showPicker(); $('boot').classList.add('hidden'); return;
+  }
+  const [r,u] = await Promise.all([c.use('room').catch(()=>null), c.use('user').catch(()=>null)]);
+  room = r; userNs = u;
+  isAdmin = u ? await u.canEdit().catch(()=>false) : false;
+  if(room){
+    room.on('state', msg=>{
+      if(msg.sameTab || mode==='local' || mode==='script' || mode===null) return;
+      const s = clean(msg.data); if(!s) return;
+      gotRemoteState = true;
+      if(newer(s, state)){ applyState(s); if(mode==='screen'||mode==='remote') lsSet(LS_STATE, JSON.stringify({s, at:Date.now()})); }
+      else if(mode==='viewer'){ renderStage(state.step); }
+    }, ()=>{});
+    room.onPeers(ch=>{
+      if(mode==='remote'){ renderTally(); renderConn(); } else { updatePolls(); renderConn(); }
+      if((mode==='screen'||mode==='remote') && state.seq>0 && ch.joined.some(p=>!p.sameTab)) scheduleBroadcast();
+    }, ()=>{});
+    room.onConnection(on=>{
+      connected = on; renderConn();
+      if(mode==='viewer') renderStage(state.step);
+      if(on && (mode==='screen'||mode==='remote') && state.seq>0) scheduleBroadcast();
+    }, ()=>{ connected=false; renderConn(); });
+    setInterval(()=>{ if((mode==='screen'||mode==='remote') && state.seq>0) broadcast(); }, 8000);
+  }
+  $('boot').classList.add('hidden');
+  const remembered = lsGet(LS_ROLE);
+  if(isAdmin){
+    if(remembered && ['screen','remote','viewer','local','script'].includes(remembered) && (room || remembered==='local' || remembered==='script')) setMode(remembered);
+    else showPicker();
+  } else if(room){ setMode('viewer'); }
+  else { showPicker(); }
+}
+boot();
+</script>
+</body>
+</html>
