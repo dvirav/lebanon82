@@ -1,0 +1,27 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# Render reads this on "New > Blueprint" and creates the service pre-configured.
+
+services:
+  - type: web
+    name: lebanon82
+    runtime: python
+    region: frankfurt # closest of Render's regions to Israel
+    # Free: the service sleeps after ~15 minutes idle and takes up to a minute to
+    # wake. Open the site a few minutes before the show. To avoid the risk
+    # entirely, switch to "starter" for the day and back afterwards.
+    plan: free
+    # ONE instance only: the room state and votes live in memory.
+    numInstances: 1
+    buildCommand: pip install -r requirements.txt
+    # --proxy-headers: Render terminates TLS, so without it the QR would encode http://
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips "*" --ws-max-size 65536
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+      # The secret in the screen/remote links (?key=...). Render generates a random
+      # value; copy it from the dashboard. Unset = nobody can present.
+      - key: PRESENTER_KEY
+        generateValue: true

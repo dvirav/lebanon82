@@ -1,23 +1,42 @@
-# איך ממשיכים ב־VS Code
-
-1. לחלץ את התיקייה הזאת למקום שבו תרצה את הפרויקט, ולפתוח אותה ב־VS Code.
-2. (מומלץ) `git init` ו־commit ראשון, כדי שיהיה לאן לחזור.
-3. לפתוח את Claude Code בתיקייה. הוא יקרא את `CLAUDE.md` אוטומטית.
-4. להדביק את ההודעה הראשונה:
-
-```
-קרא את CLAUDE.md ואת reference/index.html.
-המטרה: להעלות את הסימולטור לאתר על Render, עם FastAPI ו־WebSocket במקום ה־room של claude.ai, כך שצוערים יוכלו להצביע מהטלפון בלי חשבון.
-תציע תוכנית (מבנה קבצים, sync.js, שרת, פריסה ל־Render, בדיקות) ואל תכתוב קוד עד שאאשר.
-```
+# חדר מצב 1982: הרצה ופריסה
 
 ## מה יש בתיקייה
 
-- `CLAUDE.md`: כל ההקשר: המטרה, ההחלטות, איך הקוד עובד והארכיטקטורה המומלצת.
-- `reference/index.html`: הגרסה שעובדת היום ב־claude.ai. אפשר לפתוח אותה ישירות בדפדפן, והיא תעבוד כ"מצגת עצמאית".
-- `tests/sync_test_mock_room.py`: בדיקת Playwright עם room מדומה (תבנית לבדיקות של הגרסה החדשה).
+- `static/index.html`: הדף שהאתר מגיש. עותק של `reference/index.html` עם שלושה שינויים בלבד: טוען את `sync.js`, ה־QR מגיע מהשרת, וסעיף "לפני המופע" בתסריט עודכן לאתר (בלי חשבון Claude).
+- `static/sync.js`: בונה `window.claude` (room ו־user) מעל WebSocket, כך שהמנוע לא השתנה.
+- `app.py`: שרת FastAPI. מגיש את הדף, את `/qr.svg` ואת `/healthz`, ומחזיק את החדר ב־`/ws`.
+- `reference/index.html`: הגרסה המקורית מ־claude.ai. נפתחת ישירות בדפדפן כמצגת עצמאית (גיבוי).
+- `tests/`: `test_server.py` (השרת), `test_e2e.py` (מסך, שלט וצופים בדפדפנים אמיתיים מול השרת).
 
-## מה תצטרך מהצד שלך
+**לשנות תוכן:** לשנות את הנתונים (`PEOPLE`, `SEGMENTS`, `ITEMS`, `COVER_NOTE`) ב־`static/index.html`. אם רוצים שגם הגיבוי יתעדכן, לשנות גם ב־`reference/index.html`.
 
-- חשבון Render (כבר יש לך מ־PLO Advisor) ורפו ב־GitHub.
-- להחליט על `PRESENTER_KEY`, מחרוזת סודית שתהיה בכתובת של המסך והשלט.
+## הרצה מקומית
+
+```
+pip install --user --break-system-packages -r requirements-dev.txt
+python3 -m playwright install chromium        # פעם אחת, בשביל הבדיקות
+PRESENTER_KEY=dev python3 -m uvicorn app:app --reload
+python3 -m pytest tests/                       # צילומי מסך נשמרים ב־tests/screenshots/
+```
+
+- צופה: http://localhost:8000/
+- מסך מקרן: http://localhost:8000/?role=screen&key=dev
+- שלט: http://localhost:8000/?role=remote&key=dev
+
+## פריסה ל־Render (Blueprint, כמו בפרויקטים הקודמים)
+
+1. לדחוף את הריפו ל־GitHub.
+2. ב־Render: **New → Blueprint**, לבחור את הריפו. Render קורא את `render.yaml` ויוצר את השירות (frankfurt, free, מופע אחד).
+3. ב־Environment של השירות: להעתיק את `PRESENTER_KEY` ש־Render ייצר.
+4. הקישורים (להחליף את הכתובת ואת המפתח):
+   - צופים (זה מה שה־QR מקודד): `https://lebanon82.onrender.com/`
+   - מסך מקרן: `https://lebanon82.onrender.com/?role=screen&key=המפתח`
+   - שלט: `https://lebanon82.onrender.com/?role=remote&key=המפתח`
+
+   המפתח נמחק משורת הכתובת מיד אחרי הטעינה, כך שהוא לא מופיע על המקרן. הוא נשמר ללשונית הזאת בלבד, ורענון לא מאבד אותו.
+
+## ביום המופע
+
+- **כמה דקות לפני:** לפתוח את האתר. בתוכנית החינמית השרת נרדם אחרי רבע שעה בלי תנועה, וההתעוררות לוקחת עד דקה. (או להעביר ל־starter ליום הזה.)
+- ריצה אחת אמיתית: מחשב + טלפון, "הבא", לוודא שהמסך זז, ואז "איפוס". האיפוס מוחק גם את כל ההצבעות בשרת.
+- גיבוי אם האתר לא עובד: לפתוח את `reference/index.html` מהמחשב ולבחור "מצגת עצמאית".
