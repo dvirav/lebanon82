@@ -263,12 +263,8 @@ kbd{font-family:inherit;background:var(--bar);border-radius:4px;padding:1px 6px;
 <!-- remote -->
 <div id="remote" class="hidden">
   <div class="r-top">
-    <div class="r-row">
-      <div class="r-clock"><span id="rTotal">00:00</span> <small>/ 15:00</small></div>
-      <div class="r-status" id="rStatus"></div>
-    </div>
     <div class="segs" id="rSegs"></div>
-    <div class="r-seg"><b id="rSegName"></b><span id="rSegLbl" style="color:var(--r-sub);font-size:13px"></span><span class="t" id="rSegTime"></span></div>
+    <div class="r-seg"><b id="rSegName"></b><span id="rSegLbl" style="color:var(--r-sub);font-size:13px"></span></div>
   </div>
   <div class="r-body">
     <div class="rc note"><h3>מה להגיד עכשיו</h3><div class="v" id="rNote"></div></div>
@@ -279,7 +275,6 @@ kbd{font-family:inherit;background:var(--bar);border-radius:4px;padding:1px 6px;
     <div class="r-row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
       <span class="r-conn"><span class="dot" id="rDot"></span><span id="rConn">לא מחובר</span></span>
       <div class="r-menu">
-        <button id="rStart">▶ התחלת שעון</button>
         <button id="rReset">איפוס</button>
         <button id="rRole">החלפת תפקיד</button>
       </div>
@@ -711,19 +706,9 @@ function timing(){
 }
 function renderClock(){
   if(mode!=='remote') return;
-  const t = timing(), seg = SEGMENTS[t.cur];
-  $('rTotal').textContent = fmt(t.elapsed);
-  const st = $('rStatus');
-  if(!t.started){ st.innerHTML = '<span style="color:var(--r-sub)">השעון לא התחיל</span>'; }
-  else if(t.delta > 10000){ st.innerHTML = `<span class="st-bad">מאחור ב־${fmtSigned(t.delta)}</span><span class="s">לקצר לפני הלקחים</span>`; }
-  else if(t.delta < -20000){ st.innerHTML = `<span class="st-ok">מקדים ב־${fmtSigned(t.delta)}</span><span class="s">אפשר לתת עוד נימוק</span>`; }
-  else { st.innerHTML = `<span class="st-ok">בזמן</span><span class="s">צפי סיום 15:00</span>`; }
+  const t = {cur: segOf(state.step)}, seg = SEGMENTS[t.cur];
   $('rSegName').textContent = seg.name;
   $('rSegLbl').textContent = `חלק ${t.cur+1} מתוך ${SEGMENTS.length}`;
-  const segT = $('rSegTime'), bud = seg.budget*1000;
-  segT.textContent = `${fmt(t.segEl)} / ${fmt(bud)}`;
-  segT.className = 't ' + (!t.started ? '' : t.segEl > bud ? 'st-bad' : t.segEl > bud*0.8 ? 'st-warn' : 'st-ok');
-  $('rCut').classList.toggle('hot', t.started && (t.delta>10000 || t.segEl>bud));
   $('rSegs').innerHTML = SEGMENTS.map((s,i)=>`<div class="seg ${i<t.cur?'done':i===t.cur?'cur':''}" title="${esc(s.name)}"></div>`).join('');
 }
 function renderRemote(){
@@ -733,7 +718,6 @@ function renderRemote(){
   $('rNext2').textContent = step>=N ? 'זה הסוף. לעבור למשוב.' : preview(step);
   $('rCutTxt').textContent = SEGMENTS[segOf(step)].cut;
   $('rNext').disabled = step>=N;
-  $('rStart').classList.toggle('hidden', !!state.started);
   renderTally();
   renderClock();
   renderConn();
@@ -756,13 +740,11 @@ function renderTally(){
 $('rTally').addEventListener('click', e=>{ const b=e.target.closest('.pm'); if(!b) return; addManual(b.dataset.p, +b.dataset.i, +b.dataset.d); });
 $('rNext').onclick = ()=>go(1);
 $('rPrev').onclick = ()=>go(-1);
-$('rStart').onclick = ()=>commit(s=>{ const now=Date.now(); s.started=now; s.segStart={0:now}; });
 $('rReset').onclick = ()=>{
   let ok = true; try{ ok = confirm('לאפס את המופע? השעון, ההצבעות והמיקום יתאפסו בכל המכשירים.'); }catch(e){}
   if(ok) commit(s=>{ s.step=0; s.started=null; s.segStart={}; s.manual={}; s.frozen={}; });
 };
 $('rRole').onclick = ()=>showPicker();
-setInterval(renderClock, 1000);
 
 function renderConn(){
   const n = viewerCount();

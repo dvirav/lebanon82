@@ -88,7 +88,6 @@ def test_full_show(base_url, browser):
 
     # --- עד הסקר הראשון
     p1 = remote.evaluate("POLL_IDX.p1")
-    remote.click("#rStart")
     for _ in range(p1 + 1):
         remote.click("#rNext")
     for pg in (screen, v1, v2):
