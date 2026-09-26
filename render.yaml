@@ -7,10 +7,9 @@ services:
     name: lebanon82
     runtime: python
     region: frankfurt # closest of Render's regions to Israel
-    # Free: the service sleeps after ~15 minutes idle and takes up to a minute to
-    # wake. Open the site a few minutes before the show. To avoid the risk
-    # entirely, switch to "starter" for the day and back afterwards.
-    plan: free
+    # NOT the free plan: free services sleep after ~15 minutes idle, take up to a
+    # minute to wake, and lose the in-memory room state when they do.
+    plan: starter
     # ONE instance only: the room state and votes live in memory.
     numInstances: 1
     buildCommand: pip install -r requirements.txt
