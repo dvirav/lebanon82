@@ -191,6 +191,13 @@ kbd{font-family:inherit;background:var(--bar);border-radius:4px;padding:1px 6px;
 @media (max-width:640px){
   #chat{padding:14px 10px 24px}
   .bubble{max-width:92%}
+  header.wa{gap:10px;padding:8px 10px}
+  .avatar{width:40px;height:40px;font-size:21px}
+  .hsub{white-space:normal;overflow:visible;line-height:1.35;min-height:2.7em}
+  .hname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tools{gap:0}
+  .tools button{width:32px;height:32px;font-size:17px}
+  #fsBtn{display:none}
   .localbar{display:none}
   .cover-in{gap:22px}
   .qrbox{width:180px}
@@ -534,7 +541,7 @@ let rendered = -1, lastFrom = null, typingTimer = null;
 
 function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function membersAt(step){ const gone = new Set(); for(let i=0;i<step;i++) if(ITEMS[i].leaves) gone.add(ITEMS[i].leaves); return ['pm','dm','cos','intel'].filter(k=>!gone.has(k)); }
-function setSub(step){ const h=$('hsub'); h.classList.remove('typing'); h.textContent = membersAt(step).map(k=>PEOPLE[k].name).join(', ') + ', ' + PEOPLE.news.name; }
+function setSub(step){ const h=$('hsub'); h.classList.remove('typing'); h.textContent = [...membersAt(step), 'news'].map(k=>PEOPLE[k].name.replace(/ /g,'\u00a0')).join(', '); }
 function isChatItem(it){ return it.type!=='lesson' && it.type!=='closing'; }
 
 function makeNode(i, anim){
