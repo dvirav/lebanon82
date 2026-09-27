@@ -16,6 +16,13 @@ services:
     # --proxy-headers: Render terminates TLS, so without it the QR would encode http://
     startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips "*" --ws-max-size 65536
     healthCheckPath: /healthz
+    # Content saved from the editor (?role=edit). The service filesystem is wiped on
+    # every deploy/restart, so it lives on a persistent disk. Without the disk the
+    # site still works, but edits are lost on the next deploy.
+    disk:
+      name: content
+      mountPath: /var/data
+      sizeGB: 1
     autoDeployTrigger: commit
     envVars:
       - key: PYTHON_VERSION
@@ -24,3 +31,5 @@ services:
       # value; copy it from the dashboard. Unset = nobody can present.
       - key: PRESENTER_KEY
         generateValue: true
+      - key: CONTENT_PATH
+        value: /var/data/content.json

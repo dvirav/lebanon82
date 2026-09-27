@@ -50,6 +50,11 @@ button:focus-visible,.opt:focus-visible{outline:3px solid var(--accent);outline-
 .role b{font-size:18px;color:var(--header-text)}
 .role span{font-size:14px;color:var(--sub);line-height:1.5}
 .role .ico{font-size:26px}
+#login{display:flex;gap:8px;width:min(360px,100%)}
+#login input{flex:1;min-width:0;font:inherit;font-size:16px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+#login button,#logoutBtn{font-size:16px;padding:12px 18px;border-radius:12px;border:0;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+#logoutBtn{background:none;color:var(--sub);text-decoration:underline;padding:4px 8px;font-size:14px}
+#loginErr{color:var(--bad) !important}
 
 /* ---------- stage (chat) ---------- */
 #stage{position:fixed;inset:0;display:flex;justify-content:center}
@@ -84,7 +89,7 @@ body.ctl #chat{cursor:pointer}
 .pq{font-weight:700;margin:2px 0 4px}
 .phint{font-size:.7em;color:var(--meta);margin-bottom:8px}
 .opt{display:block;width:100%;text-align:right;background:none;border:0;color:var(--text);padding:7px 0;cursor:default}
-.poll.votable .opt, body.ctl .opt{cursor:pointer}
+.poll.votable .opt, body.local .opt{cursor:pointer}
 .oline{display:flex;align-items:center;gap:10px}
 .circle{width:20px;height:20px;border:2px solid var(--meta);border-radius:50%;flex-shrink:0}
 .opt.mine .circle{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 3px var(--in)}
@@ -188,6 +193,40 @@ kbd{font-family:inherit;background:var(--bar);border-radius:4px;padding:1px 6px;
   #script .it{break-inside:avoid}
 }
 
+/* ---------- content editor ---------- */
+#editor{max-width:920px;margin:0 auto;padding:0 16px 80px;font-size:16px;color:var(--text)}
+.ebar{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 0 10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid var(--line)}
+.ebar h1{font-size:21px;margin:0;flex:1 1 auto;color:var(--header-text)}
+#editor button{border:1px solid var(--line);background:var(--card);border-radius:9px;padding:7px 12px;cursor:pointer;font-size:15px}
+#editor button.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700;padding:7px 20px}
+#editor button.pri:disabled{opacity:.45;cursor:default}
+.estatus{width:100%;font-size:14px;color:var(--sub);min-height:1.4em}
+.estatus.bad{color:var(--bad);font-weight:600} .estatus.ok{color:var(--ok);font-weight:600} .estatus.dirty{color:var(--warn)}
+.esec{margin-top:28px}
+.esec>h2{font-size:19px;margin:0 0 6px;color:var(--header-text)}
+.esec>h2 small{font-weight:400;color:var(--sub);font-size:14px}
+.ehint{font-size:14px;color:var(--sub);margin:0 0 8px;line-height:1.5}
+.ecard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:10px 0}
+.ecard.segcard{border-inline-start:4px solid var(--accent)}
+.ehead{display:flex;align-items:center;gap:6px;font-weight:700;font-size:15px}
+.ehead .sp{flex:1}
+#editor .ehead button{padding:3px 9px;font-size:14px;min-width:34px}
+.ef{display:block;margin:8px 0}
+.ef>span{display:block;font-size:13px;color:var(--sub);margin-bottom:3px}
+.ef input[type=text],.ef textarea,.ef select{width:100%;font:inherit;font-size:16px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--in);color:var(--text)}
+.ef textarea{resize:vertical;min-height:2.7em;line-height:1.5;field-sizing:content}
+.ef input.bad{border-color:var(--bad)}
+.ef.note textarea{background:var(--bar)}
+.ef.chk{display:flex;gap:8px;align-items:center}
+.ef.chk>span{margin:0;font-size:15px;color:var(--text)}
+.epeople{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:4px 14px}
+.epeople .ef{display:flex;gap:8px;align-items:center}
+.epeople .ef>span{display:none}
+.epeople input[type=color]{width:42px;height:38px;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--in);flex-shrink:0}
+.eadd{display:flex;gap:8px;align-items:center;margin:8px 0 0}
+.eadd select{font:inherit;font-size:15px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--in);color:var(--text)}
+.etotal.off{color:var(--bad);font-weight:700}
+
 @media (max-width:640px){
   #chat{padding:14px 10px 24px}
   .bubble{max-width:92%}
@@ -222,8 +261,15 @@ kbd{font-family:inherit;background:var(--bar);border-radius:4px;padding:1px 6px;
     <button class="role" data-role="remote" id="roleRemote"><span class="ico">📱</span><b>שלט (הטלפון שלי)</b><span>קובע את הקצב. שעון, מה להגיד בכל רגע, והצבעות בזמן אמת.</span></button>
     <button class="role" data-role="viewer" id="roleViewer"><span class="ico">👥</span><b>צופה</b><span>מה שהצוערים רואים בטלפון. טוב לבדיקה.</span></button>
     <button class="role" data-role="local" id="roleLocal"><span class="ico">⌨️</span><b>מצגת עצמאית</b><span>בלי סנכרון. מתקדמים במקלדת או בקליקר, כמו מצגת רגילה.</span></button>
+    <button class="role" data-role="edit" id="roleEdit"><span class="ico">✏️</span><b>עריכת תוכן</b><span>לשנות את ההודעות, הסקרים, הלקחים ומסך הפתיחה.</span></button>
     <button class="role" data-role="script" id="roleScript"><span class="ico">📄</span><b>תסריט להדפסה</b><span>כל הסקירה על דף: זמנים, מה על המסך ומה להגיד.</span></button>
   </div>
+  <form id="login" class="hidden">
+    <input type="password" id="loginKey" placeholder="מפתח מציג" aria-label="מפתח מציג" autocomplete="current-password" required>
+    <button type="submit">כניסה</button>
+  </form>
+  <p id="loginErr" class="hidden">המפתח שגוי.</p>
+  <button id="logoutBtn" class="hidden" type="button">יציאה מהמכשיר הזה</button>
 </div>
 
 <!-- stage: screen / viewer / local -->
@@ -248,7 +294,7 @@ kbd{font-family:inherit;background:var(--bar);border-radius:4px;padding:1px 6px;
     <div class="localbar" id="localbar">
       <span><kbd>רווח</kbd> או <kbd>→</kbd> הבא</span>
       <span><kbd>←</kbd> חזרה</span>
-      <span>לחיצה על אפשרות בסקר מוסיפה קול (הרמת ידיים), <kbd>Shift</kbd> ולחיצה מורידה</span>
+      <span id="handHint">לחיצה על אפשרות בסקר מוסיפה קול (הרמת ידיים), <kbd>Shift</kbd> ולחיצה מורידה</span>
     </div>
   </div>
 
@@ -294,25 +340,38 @@ kbd{font-family:inherit;background:var(--bar);border-radius:4px;padding:1px 6px;
   </div>
 </div>
 
+<!-- content editor -->
+<div id="editor" class="hidden">
+  <div class="ebar">
+    <h1>✏️ עריכת תוכן</h1>
+    <button class="pri" data-act="save" id="edSave">שמירה</button>
+    <button data-act="discard">ביטול שינויים</button>
+    <button data-act="back">חזרה</button>
+    <div class="estatus" id="edStatus"></div>
+  </div>
+  <div id="edBody"></div>
+</div>
+
 <!-- printable script -->
 <div id="script" class="hidden"></div>
 
 <script src="/sync.js"></script>
+<script src="/content.js"></script>
 <script>
 /* =====================================================================
    התוכן. כל מה שמופיע על המסך, בשלט ובתסריט נבנה מכאן.
    ===================================================================== */
-const PEOPLE = {
-  pm:   {name:'ראש הממשלה', color:'#e5487a'},
-  dm:   {name:'שר הביטחון', color:'#d98a1f'},
-  cos:  {name:'הרמטכ״ל',    color:'#35a0e0'},
-  intel:{name:'ראש אמ״ן',   color:'#8e6de0'},
+let PEOPLE = {
+  pm:   {name:'מנחם בגין', color:'#e5487a'},
+  dm:   {name:'אריאל שרון', color:'#d98a1f'},
+  cos:  {name:'רפאל איתן',  color:'#35a0e0'},
+  intel:{name:'יהושע שגיא', color:'#8e6de0'},
   news: {name:'📻 מבזק חדשות', color:'#1fa855'},
   room: {name:'📊 חדר המצב', color:'#00a884'}
 };
 const TOTAL_SEC = 15*60;
 
-const SEGMENTS = [
+let SEGMENTS = [
   {name:'פתיחה', budget:60,
    cut:'לא לחכות שכולם יתחברו. מי שאין לו טלפון מצביע בהרמת יד, ואתה מוסיף את הקולות בשלט.'},
   {name:'רקע', budget:90,
@@ -329,9 +388,9 @@ const SEGMENTS = [
    cut:'את החלק הזה לא מקצרים. אם צריך לפנות זמן, מקצרים לפני כן.'}
 ];
 
-const COVER_NOTE = 'לקרוא את שתי השורות, ולשאול "איך זה קורה?". לא לענות — "בסוף נדע". להגיד שזו סימולציה: האירועים אמיתיים, ההודעות מנוסחות. מי שיכול, שיסרוק את הקוד.';
+let COVER_NOTE = 'לקרוא את שתי השורות, ולשאול "איך זה קורה?". לא לענות — "בסוף נדע". להגיד שזו סימולציה: האירועים אמיתיים, ההודעות מנוסחות. מי שיכול, שיסרוק את הקוד.';
 
-const ITEMS = [
+let ITEMS = [
   /* ---- רקע ---- */
   {seg:1, type:'date', text:'ספטמבר 1970'},
   {seg:1, type:'news', text:'אש״ף מגורש מירדן ("ספטמבר השחור"). הארגונים הפלסטיניים עוברים ללבנון ומתבססים בדרומה, על הגבול עם ישראל.',
@@ -408,7 +467,7 @@ const ITEMS = [
   {seg:5, type:'news', text:'מאות אלפי מפגינים בתל אביב דורשים ועדת חקירה ממלכתית.'},
   {seg:5, type:'date', text:'פברואר 1983'},
   {seg:5, type:'news', text:'ועדת כהן: לדרג המדיני והצבאי אחריות עקיפה לטבח. הוועדה ממליצה ששר הביטחון יסיק מסקנות אישיות.'},
-  {seg:5, type:'system', text:'שר הביטחון עזב את הקבוצה', leaves:'dm'},
+  {seg:5, type:'system', text:'אריאל שרון עזב את הקבוצה', leaves:'dm'},
   {seg:5, type:'date', text:'1985'},
   {seg:5, type:'news', text:'צה״ל נסוג לרצועת הביטחון בדרום לבנון. באותן שנים קם ומתחזק חיזבאללה.'},
   {seg:5, type:'date', text:'24 במאי 2000'},
@@ -437,10 +496,16 @@ const ITEMS = [
    note:'לקרוא את התשובה ולסיים. תודה, ולעבור למשוב.'}
 ];
 
+let COVER = {lines:['המבצע תוכנן לימים ספורים ולעומק של 40 ק״מ.','צה״ל יצא אחרי 18 שנה.'], q:'איך זה קורה?', go:'בואו נחזור לאיפה שהכל התחיל'};
+
 /* =====================================================================
    מנוע
    ===================================================================== */
+// מה שנשמר במסך העריכה (מגיע מהשרת ב־/content.js) מחליף את ברירת המחדל שלמעלה.
+const DEFAULT_CONTENT = JSON.stringify({people:PEOPLE, segments:SEGMENTS, cover:COVER, coverNote:COVER_NOTE, items:ITEMS});
+if(window.LB82_CONTENT) ({people:PEOPLE, segments:SEGMENTS, cover:COVER, coverNote:COVER_NOTE, items:ITEMS} = window.LB82_CONTENT);
 ITEMS.forEach(it=>{ if(it.type==='news' && !it.from) it.from = 'news'; });
+let LESSONS = 0; ITEMS.forEach(it=>{ if(it.type==='lesson') it.n = ++LESSONS; });
 const N = ITEMS.length;
 const RID = Math.random().toString(36).slice(2,10);
 const LS_STATE = 'lb82-state', LS_ROLE = 'lb82-role', LS_FS = 'lb82-fs-';
@@ -458,6 +523,7 @@ function blankState(seq){ return {seq:seq||0, rid:RID, step:0, started:null, seg
 let state = blankState(0);
 let mode = null;            // screen | remote | viewer | local | script
 let room = null, userNs = null, isAdmin = false, connected = false;
+let contentNs = null;       // שמירת תוכן (רק באתר, למציג)
 let myVote = null;          // {p, o}
 let gotRemoteState = false;
 
@@ -609,6 +675,14 @@ function renderStage(prevStep){
   else lv.classList.add('hidden');
 }
 
+function renderCover(){
+  const box = document.querySelector('.cover-text'), w = $('waitMsg');
+  box.querySelectorAll('p').forEach(p=>p.remove());
+  const add = (cls,t)=>{ if(!t) return; const p=document.createElement('p'); p.className=cls; p.textContent=t; box.insertBefore(p,w); };
+  COVER.lines.forEach(t=>add('l',t)); add('q',COVER.q); add('go',COVER.go);
+}
+renderCover();
+
 function renderLesson(it){
   const c = $('lcard');
   if(it.type==='closing'){
@@ -618,7 +692,7 @@ function renderLesson(it){
   }
   const m = it.moment, p = PEOPLE[m.from];
   const inner = m.deleted ? '<span class="deleted">🚫 הודעה זו נמחקה</span>' : esc(m.text);
-  c.innerHTML = `<div class="lpin">📌 לקח ${it.n} מתוך 3</div><h2 class="ltitle">${esc(it.title)}</h2><p class="lbody">${esc(it.body)}</p>
+  c.innerHTML = `<div class="lpin">📌 לקח ${it.n} מתוך ${LESSONS}</div><h2 class="ltitle">${esc(it.title)}</h2><p class="lbody">${esc(it.body)}</p>
     <div class="lmoment"><span class="cap">${esc(m.cap)}</span><div class="bubble"><div class="sender" style="color:${p.color}">${esc(p.name)}</div>${inner}</div></div>`;
 }
 
@@ -651,7 +725,7 @@ chat.addEventListener('click', e=>{
       myVote = {p:pid, o:i};
       room.presence({role:'viewer', vote:myVote}).catch(()=>{});
       updatePolls();
-    } else if(isController()) addManual(pid, i, e.shiftKey?-1:1);
+    } else if(mode==='local') addManual(pid, i, e.shiftKey?-1:1);  // במסך המקרן ידיים מוסיפים רק מהשלט
     return;
   }
   if(mode==='screen' || mode==='local') go(1);
@@ -684,7 +758,7 @@ $('roleBtn').onclick = ()=>showPicker();
 function fmt(ms){ const s=Math.max(0,Math.round(ms/1000)); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
 function fmtSigned(ms){ const s=Math.round(Math.abs(ms)/1000); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 function preview(i){
-  if(i<0) return 'מסך הפתיחה: "איך זה קורה?"';
+  if(i<0) return `מסך הפתיחה: "${COVER.q}"`;
   const it = ITEMS[i]; if(!it) return 'סוף';
   switch(it.type){
     case 'date': return '📅 '+it.text;
@@ -788,7 +862,7 @@ function renderScript(){
   </ul>
   <h2>0. פתיחה <span class="tm">· ${fmt(SEGMENTS[0].budget*1000)}</span></h2>
   <p class="cutline">אם מאחרים: ${esc(SEGMENTS[0].cut)}</p>
-  <div class="it"><div class="scr">מסך הפתיחה: "איך זה קורה?"</div><div class="say">${esc(COVER_NOTE)}</div></div>`;
+  <div class="it"><div class="scr">${esc(preview(-1))}</div><div class="say">${esc(COVER_NOTE)}</div></div>`;
   for(let s=1;s<SEGMENTS.length;s++){
     html += `<h2>${s}. ${esc(SEGMENTS[s].name)} <span class="tm">· ${fmt(SEGMENTS[s].budget*1000)}</span></h2><p class="cutline">אם מאחרים: ${esc(SEGMENTS[s].cut)}</p>`;
     ITEMS.forEach((it,i)=>{ if(it.seg!==s || it.type==='date') return;
@@ -805,17 +879,180 @@ function renderScript(){
 }
 
 /* =====================================================================
+   Content editor (?role=edit). עורך עותק של התוכן ושומר אותו בשרת.
+   ===================================================================== */
+const TYPE_LABEL = {date:'📅 תאריך', msg:'💬 הודעה', news:'📻 מבזק חדשות', deleted:'🚫 הודעה שנמחקה', poll:'📊 סקר',
+  system:'ℹ️ הודעת מערכת', lesson:'📌 לקח', closing:'📌 סיכום'};
+const FIELDS = {
+  date:   [['text','תאריך','line']],
+  msg:    [['from','שולח','person'], ['text','הודעה','area']],
+  news:   [['text','מבזק','area']],
+  deleted:[['from','שולח','person']],
+  poll:   [['q','שאלה','line'], ['options','אפשרויות (שורה לכל אפשרות)','lines']],
+  system: [['text','טקסט','line'], ['leaves','מי עוזב את הקבוצה','leaves']],
+  lesson: [['title','כותרת','line'], ['body','הסבר','area'], ['moment.cap','כיתוב לפני הרגע','line'],
+           ['moment.from','הרגע: שולח','person'], ['moment.deleted','הרגע הוא "הודעה זו נמחקה"','check'], ['moment.text','הרגע: טקסט','area']],
+  closing:[['q','שאלה','line'], ['answer','תשובה','area']]
+};
+const NEW_ITEM = {date:{text:''}, msg:{from:'pm', text:''}, news:{text:''}, deleted:{from:'dm'},
+  poll:{from:'room', q:'', options:['','']}, system:{text:''},
+  lesson:{title:'', body:'', moment:{cap:'הרגע:', from:'room', text:''}}, closing:{q:'', answer:''}};
+let ed = null, edBase = null, edDirty = false, edStale = false;
+
+const attr = s => esc(String(s ?? '')).replace(/"/g,'&quot;');
+const getPath = (o,k) => k.split('.').reduce((a,p)=>a==null?a:a[p], o);
+function setPath(o,k,v){ const ps=k.split('.'), last=ps.pop(); for(const p of ps) o = o[p] ||= {}; o[last] = v; }
+function parseDur(t){ const m = /^\s*(\d{1,2})(?::([0-5]?\d))?\s*$/.exec(t); return m ? +m[1]*60 + +(m[2]||0) : null; }
+const fmtDur = s => Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+
+function edField(data, key, label, kind, val, cls){
+  const a = Object.entries({...data, k:key, kind}).map(([k,v])=>`data-${k}="${attr(v)}"`).join(' ');
+  if(kind==='area' || kind==='lines')
+    return `<label class="ef ${cls||''}"><span>${label}</span><textarea ${a} rows="2">${esc(kind==='lines' ? (val||[]).join('\n') : (val??''))}</textarea></label>`;
+  if(kind==='person' || kind==='leaves'){
+    const keys = kind==='person' ? Object.keys(ed.people) : ['','pm','dm','cos','intel'];
+    return `<label class="ef"><span>${label}</span><select ${a}>${keys.map(k=>`<option value="${k}"${k===(val||'')?' selected':''}>${k?esc(ed.people[k].name):'אף אחד'}</option>`).join('')}</select></label>`;
+  }
+  if(kind==='check') return `<label class="ef chk"><input type="checkbox" ${a}${val?' checked':''}><span>${label}</span></label>`;
+  if(kind==='color') return `<input type="color" ${a} value="${attr(val)}" aria-label="${attr(label)}">`;
+  return `<label class="ef"><span>${label}</span><input type="text" ${a} value="${attr(kind==='dur' ? fmtDur(val) : val)}"></label>`;
+}
+
+function edItem(it, i){
+  const same = j => ed.items[j] && ed.items[j].seg===it.seg;
+  let h = `<div class="ecard" id="ei-${i}"><div class="ehead"><span>${TYPE_LABEL[it.type]}</span><span class="sp"></span>
+    <button data-act="up" data-i="${i}" title="למעלה" aria-label="למעלה"${same(i-1)?'':' disabled'}>↑</button>
+    <button data-act="down" data-i="${i}" title="למטה" aria-label="למטה"${same(i+1)?'':' disabled'}>↓</button>
+    <button data-act="del" data-i="${i}" title="מחיקה" aria-label="מחיקה">🗑</button></div>`;
+  for(const [k,label,kind] of FIELDS[it.type]){
+    if(k==='moment.text' && it.moment && it.moment.deleted) continue;
+    h += edField({i}, k, label, kind, getPath(it,k));
+  }
+  return h + edField({i}, 'note', 'מה להגיד (מופיע רק בשלט ובתסריט)', 'area', it.note, 'note') + '</div>';
+}
+
+function edTotal(){
+  const t = ed.segments.reduce((a,s)=>a+s.budget,0), el = $('edTotal'); if(!el) return;
+  el.textContent = `סה״כ ${fmtDur(t)}` + (t!==TOTAL_SEC ? ` (היעד ${fmtDur(TOTAL_SEC)})` : '');
+  el.classList.toggle('off', t!==TOTAL_SEC);
+}
+
+function renderEditor(){
+  if(!ed){ edBase = JSON.stringify({people:PEOPLE, segments:SEGMENTS, cover:COVER, coverNote:COVER_NOTE, items:ITEMS}); ed = JSON.parse(edBase); }
+  const y = scrollY;
+  let h = `<section class="esec"><h2>משתתפים</h2><p class="ehint">השם והצבע שמופיעים מעל ההודעות.</p><div class="epeople">` +
+    Object.keys(ed.people).map(k=>`<div class="ef">${edField({p:k}, 'color', 'צבע', 'color', ed.people[k].color)}<input type="text" data-p="${k}" data-k="name" data-kind="line" value="${attr(ed.people[k].name)}" aria-label="שם"></div>`).join('') +
+    `</div></section>`;
+  ed.segments.forEach((sg,s)=>{
+    h += `<section class="esec"><h2>${s}. ${esc(sg.name)}${s===0 ? ' <small class="etotal" id="edTotal"></small>' : ''}</h2>
+      <div class="ecard segcard">${edField({seg:s}, 'name', 'שם החלק', 'line', sg.name)}${edField({seg:s}, 'budget', 'זמן (דקות:שניות)', 'dur', sg.budget)}${edField({seg:s}, 'cut', 'אם מאחרים בחלק הזה', 'area', sg.cut, 'note')}</div>`;
+    if(s===0) h += `<div class="ecard"><div class="ehead">🖥️ מסך הפתיחה</div>
+      ${edField({c:1}, 'cover.lines', 'שורות פתיחה (שורה לכל שורה)', 'lines', ed.cover.lines)}${edField({c:1}, 'cover.q', 'השאלה הגדולה', 'line', ed.cover.q)}
+      ${edField({c:1}, 'cover.go', 'שורה אחרונה', 'line', ed.cover.go)}${edField({c:1}, 'coverNote', 'מה להגיד (מופיע רק בשלט ובתסריט)', 'area', ed.coverNote, 'note')}</div>`;
+    ed.items.forEach((it,i)=>{ if(it.seg===s) h += edItem(it,i); });
+    h += `<div class="eadd"><select id="edAdd-${s}" aria-label="סוג">${Object.keys(TYPE_LABEL).map(t=>`<option value="${t}">${TYPE_LABEL[t]}</option>`).join('')}</select>
+      <button data-act="add" data-seg="${s}">+ הוספה לחלק הזה</button></div></section>`;
+  });
+  h += `<section class="esec"><h2>מתקדם</h2>
+    <p class="ehint">גיבוי: קובץ HTML עם הגרסה השמורה, שנפתח בלי אינטרנט כמצגת עצמאית.</p>
+    <div class="eadd"><button data-act="download">הורדת גיבוי</button><button data-act="defaults">חזרה לטקסט המקורי</button></div></section>`;
+  $('edBody').innerHTML = h;
+  edTotal(); edStatus();
+  scrollTo(0, y);
+}
+
+function edStatus(msg, cls){
+  const el = $('edStatus');
+  if(msg){ el.textContent = msg; el.className = 'estatus '+(cls||''); }
+  else if(edDirty){ el.textContent = 'יש שינויים שלא נשמרו.'; el.className = 'estatus dirty'; }
+  else { el.textContent = 'השינויים נכנסים לתוקף רק אחרי "שמירה".'; el.className = 'estatus'; }
+  $('edSave').disabled = !edDirty;
+}
+function edChanged(){ edDirty = true; edStatus(); }
+
+$('edBody').addEventListener('input', e=>{
+  const el = e.target, d = el.dataset; if(!d.k) return;
+  let v = d.kind==='check' ? el.checked : d.kind==='lines' ? el.value.split('\n') : el.value;
+  if(d.kind==='dur'){ v = parseDur(el.value); el.classList.toggle('bad', v==null); if(v==null) return; }
+  const target = d.i!=null ? ed.items[+d.i] : d.seg!=null ? ed.segments[+d.seg] : d.p!=null ? ed.people[d.p] : ed;
+  setPath(target, d.k, v);
+  edChanged();
+  if(d.kind==='dur') edTotal();
+  if(d.kind==='check') renderEditor();
+});
+
+function edExport(){
+  const c = JSON.parse(JSON.stringify(ed));
+  c.cover.lines = c.cover.lines.filter(x=>x.trim());
+  c.items.forEach(it=>{ if(it.options) it.options = it.options.filter(x=>x.trim()); delete it.n; });
+  return c;
+}
+
+async function edSave(){
+  let ok = true; try{ ok = confirm('לשמור? כל המכשירים (מסך, שלט וטלפונים) ייטענו מחדש עם הטקסט החדש, והמופע יתאפס להתחלה.'); }catch(e){}
+  if(!ok) return;
+  const data = edExport();
+  edStatus('שומר…');
+  try{ await contentNs.save(data); }
+  catch(e){ edStatus('לא נשמר: '+(e.message||e), 'bad'); $('edSave').disabled = false; return; }
+  edBase = JSON.stringify(data); ed = JSON.parse(edBase); edDirty = false; edStale = true;
+  renderEditor(); edStatus('נשמר ✓ כל המכשירים נטענו מחדש עם הטקסט החדש.', 'ok');
+}
+
+async function edAct(b){
+  const act = b.dataset.act, i = +b.dataset.i;
+  if(act==='save') return edSave();
+  if(act==='up' || act==='down'){ const j = act==='up' ? i-1 : i+1; [ed.items[i], ed.items[j]] = [ed.items[j], ed.items[i]]; edChanged(); renderEditor(); return; }
+  if(act==='del'){ let ok=true; try{ ok = confirm('למחוק את '+TYPE_LABEL[ed.items[i].type]+'?'); }catch(e){} if(!ok) return; ed.items.splice(i,1); edChanged(); renderEditor(); return; }
+  if(act==='add'){
+    const s = +b.dataset.seg, t = $('edAdd-'+s).value;
+    const it = {seg:s, type:t, ...JSON.parse(JSON.stringify(NEW_ITEM[t]))};
+    if(t==='poll') it.id = 'p'+Date.now().toString(36);
+    let at = 0; ed.items.forEach((x,k)=>{ if(x.seg<=s) at = k+1; });
+    ed.items.splice(at, 0, it); edChanged(); renderEditor();
+    const card = $('ei-'+at); card.scrollIntoView({block:'center', behavior: reduced()?'auto':'smooth'}); card.querySelector('input,textarea,select')?.focus({preventScroll:true});
+    return;
+  }
+  if(act==='discard'){ if(!edDirty) return; let ok=true; try{ ok = confirm('לבטל את כל השינויים מאז השמירה האחרונה?'); }catch(e){} if(!ok) return;
+    ed = JSON.parse(edBase); edDirty = false; renderEditor(); return; }
+  if(act==='defaults'){
+    let ok=true; try{ ok = confirm('לחזור לטקסט המקורי? כל מה שנשמר במסך העריכה יימחק, וכל המכשירים ייטענו מחדש.'); }catch(e){} if(!ok) return;
+    try{ await contentNs.reset(); }catch(e){ edStatus('לא הצלחתי: '+(e.message||e), 'bad'); return; }
+    edBase = DEFAULT_CONTENT; ed = JSON.parse(edBase); edDirty = false; edStale = true;
+    renderEditor(); edStatus('חזרנו לטקסט המקורי ✓', 'ok'); return;
+  }
+  if(act==='download'){
+    const html = await (await fetch('/')).text();
+    const inline = '<script>window.LB82_CONTENT = ' + edBase.replace(/<\//g,'<\\/') + ';<\/script>';
+    const blob = new Blob([html.replace('<script src="/content.js"><\/script>', inline)], {type:'text/html'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'lebanon82-standalone.html';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+    return;
+  }
+  if(act==='back'){
+    if(edDirty){ let ok=true; try{ ok = confirm('יש שינויים שלא נשמרו. לצאת בלי לשמור?'); }catch(e){} if(!ok) return; }
+    // אחרי שמירה, הקבועים בלשונית הזאת ישנים. טוענים מחדש ומגיעים לבחירת התפקיד.
+    if(edStale){ lsDel(LS_ROLE); location.reload(); return; }
+    ed = null; edDirty = false; showPicker();
+  }
+}
+$('editor').addEventListener('click', e=>{ const b = e.target.closest('button[data-act]'); if(b) edAct(b); });
+addEventListener('beforeunload', e=>{ if(mode==='edit' && edDirty){ e.preventDefault(); e.returnValue = ''; } });
+
+/* =====================================================================
    Modes
    ===================================================================== */
 function showPicker(){
-  for(const id of ['stage','remote','script']) $(id).classList.add('hidden');
-  document.body.classList.remove('ctl');
+  for(const id of ['stage','remote','script','editor']) $(id).classList.add('hidden');
+  document.body.classList.remove('ctl','local');
   $('picker').classList.remove('hidden');
+  $('logoutBtn').classList.toggle('hidden', !(window.LB82_AUTH && LB82_AUTH.adminPage));
   const noSync = !room;
   $('roleScreen').classList.toggle('hidden', !isAdmin || noSync);
   $('roleRemote').classList.toggle('hidden', !isAdmin || noSync);
   $('roleViewer').classList.toggle('hidden', !isAdmin || noSync);
   $('roleScript').classList.toggle('hidden', !isAdmin && !!window.claude);
+  $('roleEdit').classList.toggle('hidden', !isAdmin || noSync || !contentNs);
   $('pickerHint').textContent = noSync
     ? 'הסנכרון לא זמין במכשיר הזה. אפשר להריץ את הסקירה כמצגת עצמאית.'
     : 'בחר איך המכשיר הזה ישמש במופע. המחשב במקרן: "מסך מקרן". הטלפון שלך: "שלט".';
@@ -825,8 +1062,10 @@ function setMode(m){
   mode = m;
   if(isAdmin) lsSet(LS_ROLE, m);
   $('picker').classList.add('hidden'); $('boot').classList.add('hidden');
-  for(const id of ['stage','remote','script']) $(id).classList.add('hidden');
+  for(const id of ['stage','remote','script','editor']) $(id).classList.add('hidden');
   document.body.classList.toggle('ctl', m==='screen' || m==='local');
+  document.body.classList.toggle('local', m==='local');
+  $('handHint').classList.toggle('hidden', m!=='local');
   if(m==='script'){ renderScript(); $('script').classList.remove('hidden'); return; }
 
   // state source
@@ -837,6 +1076,7 @@ function setMode(m){
     if(s && newer(s, state)) state = s;
   }
   if(room) room.presence({role: m, vote: m==='viewer' ? myVote : null}).catch(()=>{});
+  if(m==='edit'){ renderEditor(); $('editor').classList.remove('hidden'); return; }
 
   if(m==='remote'){ $('remote').classList.remove('hidden'); renderRemote(); scheduleBroadcast(); return; }
   $('stage').classList.remove('hidden');
@@ -852,6 +1092,18 @@ function setMode(m){
 }
 document.querySelectorAll('.role').forEach(b=>b.addEventListener('click', ()=>setMode(b.dataset.role)));
 
+// דף הבקרה (/admin) בלי מפתח תקף: רק טופס כניסה.
+function showLogin(){
+  $('picker').classList.remove('hidden');
+  $('picker').querySelector('.roles').classList.add('hidden');
+  $('login').classList.remove('hidden');
+  $('loginErr').classList.toggle('hidden', !LB82_AUTH.hasKey);
+  $('pickerHint').textContent = 'דף הבקרה של המציג. הזן את מפתח המציג.';
+  $('loginKey').focus();
+}
+$('login').addEventListener('submit', e=>{ e.preventDefault(); LB82_AUTH.login($('loginKey').value); });
+$('logoutBtn').onclick = ()=>LB82_AUTH.logout();
+
 /* =====================================================================
    Boot
    ===================================================================== */
@@ -860,8 +1112,8 @@ async function boot(){
   if(!c || typeof c.use!=='function'){ // opened as a plain file: no sync
     isAdmin = true; showPicker(); $('boot').classList.add('hidden'); return;
   }
-  const [r,u] = await Promise.all([c.use('room').catch(()=>null), c.use('user').catch(()=>null)]);
-  room = r; userNs = u;
+  const [r,u,cn] = await Promise.all([c.use('room').catch(()=>null), c.use('user').catch(()=>null), c.use('content').catch(()=>null)]);
+  room = r; userNs = u; contentNs = cn;
   isAdmin = u ? await u.canEdit().catch(()=>false) : false;
   if(room){
     room.on('state', msg=>{
@@ -871,6 +1123,8 @@ async function boot(){
       if(newer(s, state)){ applyState(s); if(mode==='screen'||mode==='remote') lsSet(LS_STATE, JSON.stringify({s, at:Date.now()})); }
       else if(mode==='viewer'){ renderStage(state.step); }
     }, ()=>{});
+    // התוכן השתנה במסך העריכה: לטעון מחדש עם הטקסט החדש. המיקום הישן כבר לא תקף.
+    room.on('reload', ()=>{ if(mode==='edit'){ edStale = true; return; } lsDel(LS_STATE); location.reload(); }, ()=>{});
     room.onPeers(ch=>{
       if(mode==='remote'){ renderTally(); renderConn(); } else { updatePolls(); renderConn(); }
       if((mode==='screen'||mode==='remote') && state.seq>0 && ch.joined.some(p=>!p.sameTab)) scheduleBroadcast();
@@ -884,8 +1138,9 @@ async function boot(){
   }
   $('boot').classList.add('hidden');
   const remembered = lsGet(LS_ROLE);
-  if(isAdmin){
-    if(remembered && ['screen','remote','viewer','local','script'].includes(remembered) && (room || remembered==='local' || remembered==='script')) setMode(remembered);
+  if(window.LB82_AUTH && LB82_AUTH.adminPage && !isAdmin){ showLogin(); }
+  else if(isAdmin){
+    if(remembered && ['screen','remote','viewer','local','script','edit'].includes(remembered) && (room || remembered==='local' || remembered==='script') && (remembered!=='edit' || contentNs)) setMode(remembered);
     else showPicker();
   } else if(room){ setMode('viewer'); }
   else { showPicker(); }

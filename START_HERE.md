@@ -20,8 +20,8 @@ python3 -m pytest tests/                       # צילומי מסך נשמרי�
 ```
 
 - צופה: http://localhost:8000/
-- מסך מקרן: http://localhost:8000/?role=screen&key=dev
-- שלט: http://localhost:8000/?role=remote&key=dev
+- מסך מקרן: http://localhost:8000/admin?role=screen&key=dev
+- שלט: http://localhost:8000/admin?role=remote&key=dev
 
 ## פריסה ל־Render (Blueprint, כמו בפרויקטים הקודמים)
 
@@ -30,8 +30,8 @@ python3 -m pytest tests/                       # צילומי מסך נשמרי�
 3. ב־Environment של השירות: להעתיק את `PRESENTER_KEY` ש־Render ייצר.
 4. הקישורים (להחליף את הכתובת ואת המפתח):
    - צופים (זה מה שה־QR מקודד): `https://lebanon82.onrender.com/`
-   - מסך מקרן: `https://lebanon82.onrender.com/?role=screen&key=המפתח`
-   - שלט: `https://lebanon82.onrender.com/?role=remote&key=המפתח`
+   - מסך מקרן: `https://lebanon82.onrender.com/admin?role=screen&key=המפתח`
+   - שלט: `https://lebanon82.onrender.com/admin?role=remote&key=המפתח`
 
    המפתח נמחק משורת הכתובת מיד אחרי הטעינה, כך שהוא לא מופיע על המקרן. הוא נשמר ללשונית הזאת בלבד, ורענון לא מאבד אותו.
 

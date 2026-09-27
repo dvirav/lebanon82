@@ -15,8 +15,10 @@ def st(seq, step, **kw):
 
 
 @pytest.fixture
-def client(monkeypatch):
+def client(monkeypatch, tmp_path):
     monkeypatch.setenv("PRESENTER_KEY", KEY)
+    monkeypatch.setattr(server, "CONTENT_PATH", tmp_path / "content.json")
+    monkeypatch.setattr(server, "_rev", None)
     monkeypatch.setattr(server, "room", server.Room())
     monkeypatch.setattr(server, "PEERS_DEBOUNCE", 0)
     with TestClient(server.app) as c:
@@ -56,7 +58,7 @@ def counts(peers, pid, n):
 
 
 def push(admin, s):
-    admin.send_json({"type": "state", "data": s, "meta": META})
+    admin.send_json({"type": "state", "data": s, "meta": META, "rev": server.current_rev()})
 
 
 # ---------------------------------------------------------------- http
@@ -68,6 +70,16 @@ def test_http(client):
     assert client.get("/sync.js").status_code == 200
     svg = client.get("/qr.svg").text
     assert 'xmlns="http://www.w3.org/2000/svg"' in svg and "viewBox" in svg
+
+
+def test_admin_page_is_separate(client):
+    assert client.get("/admin").text == client.get("/").text
+    assert client.get("/admin").headers["x-robots-tag"] == "noindex"
+    # קישורים ישנים עם מפתח או תפקיד מציג עוברים לדף הבקרה, עם הפרמטרים.
+    r = client.get(f"/?role=screen&key={KEY}", follow_redirects=False)
+    assert r.status_code == 307 and r.headers["location"] == f"/admin?role=screen&key={KEY}"
+    assert client.get("/?role=remote", follow_redirects=False).status_code == 307
+    assert client.get("/?role=viewer", follow_redirects=False).status_code == 200
 
 
 # ---------------------------------------------------------------- auth
@@ -186,3 +198,98 @@ def test_reset_clears_votes(client):
 def test_invalid_client_id_is_replaced(client):
     _, w = join(client, "<script>")
     assert w["clientId"] != "<script>"
+
+
+# ---------------------------------------------------------------- content editor
+
+CONTENT = {
+    "people": {k: {"name": k.upper(), "color": "#123abc"} for k in server.PEOPLE_KEYS},
+    "segments": [{"name": "פתיחה", "budget": 60, "cut": ""}, {"name": "רקע", "budget": 840, "cut": "לקצר"}],
+    "cover": {"lines": ["שורה", ""], "q": "שאלה?", "go": ""},
+    "coverNote": "",
+    "items": [
+        {"seg": 1, "type": "msg", "from": "pm", "text": "שלום", "note": "  "},
+        {"seg": 1, "type": "poll", "id": "p1", "from": "room", "q": "כן?", "options": ["כן", "לא"], "n": 3},
+        {"seg": 1, "type": "lesson", "title": "ל", "body": "ב", "moment": {"cap": "", "from": "dm", "deleted": True}},
+    ],
+}
+
+
+@pytest.fixture
+def content_file():
+    return server.CONTENT_PATH
+
+
+def test_content_default_is_null(client, content_file):
+    assert client.get("/content.js").text.splitlines() == ["window.LB82_CONTENT = null;", 'window.LB82_REV = "default";']
+
+
+def test_content_requires_key(client, content_file):
+    assert client.put("/content", json=CONTENT).status_code == 403
+    assert client.put("/content", json=CONTENT, headers={"X-Presenter-Key": "wrong"}).status_code == 403
+    assert client.delete("/content").status_code == 403
+    assert not content_file.exists()
+
+
+def test_content_save_serve_and_reset(client, content_file):
+    admin, _ = join(client, "admin", KEY, "remote")
+    viewer, _ = join(client, "v1")
+    push(admin, st(1, 3))
+    viewer.send_json({"type": "presence", "role": "viewer", "vote": {"p": "p1", "o": 1}})
+    until(viewer, "peers", lambda m: any(p["presence"].get("vote") for p in m["peers"]))
+
+    r = client.put("/content", json=CONTENT, headers={"X-Presenter-Key": KEY})
+    assert r.status_code == 200, r.text
+    until(viewer, "reload")
+    assert server.room.state is None and server.room.votes == {}
+
+    js = client.get("/content.js").text
+    assert '"text": "שלום"' in js
+    saved = server.load_content()
+    assert saved["cover"]["lines"] == ["שורה"]
+    assert "note" not in saved["items"][0] and "n" not in saved["items"][1]
+    assert saved["items"][2]["moment"] == {"cap": "", "from": "dm", "deleted": True}
+
+    # מכשיר שעוד מחזיק את התוכן הישן לא יכול להחזיר את המיקום הישן
+    admin.send_json({"type": "state", "data": st(9, 3), "meta": META, "rev": "default"})
+    viewer.send_json({"type": "ping"})
+    push(admin, st(10, 1))
+    assert until(viewer, "state")["data"]["seq"] == 10
+
+    assert client.delete("/content", headers={"X-Presenter-Key": KEY}).status_code == 200
+    assert not content_file.exists()
+    until(viewer, "reload")
+
+
+def test_content_script_tag_cannot_break_out(client, content_file):
+    c = {**CONTENT, "coverNote": "</script><script>alert(1)</script>"}
+    assert client.put("/content", json=c, headers={"X-Presenter-Key": KEY}).status_code == 200
+    assert "</script>" not in client.get("/content.js").text
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda c: c["items"].append({"seg": 1, "type": "evil", "text": "x"}),
+    lambda c: c["items"].append({"seg": 9, "type": "date", "text": "x"}),
+    lambda c: c["items"].append({"seg": 1, "type": "date", "text": "   "}),
+    lambda c: c["items"].append({"seg": 1, "type": "msg", "from": "nobody", "text": "x"}),
+    lambda c: c["items"].append({"seg": 1, "type": "poll", "id": "p1", "from": "room", "q": "x", "options": ["a", "b"]}),
+    lambda c: c["items"].append({"seg": 1, "type": "poll", "id": "p9", "from": "room", "q": "x", "options": ["a"]}),
+    lambda c: c["items"].insert(0, {"seg": 1, "type": "date", "text": "x"}) or c["items"].insert(0, {"seg": 1, "type": "date", "text": "x"}) or c["items"].append({"seg": 0, "type": "date", "text": "x"}),
+    lambda c: c["people"]["pm"].update(color="red"),
+    lambda c: c["segments"][0].update(budget=-1),
+    lambda c: c["items"].__setitem__(0, {**c["items"][0], "text": "x" * 5000}),
+    lambda c: c["items"].__setitem__(2, {**c["items"][2], "moment": {"from": "dm"}}),
+    lambda c: c.pop("items"),
+])
+def test_content_rejects_invalid(client, content_file, mutate):
+    import copy
+    c = copy.deepcopy(CONTENT)
+    mutate(c)
+    r = client.put("/content", json=c, headers={"X-Presenter-Key": KEY})
+    assert r.status_code == 400
+    assert not content_file.exists()
+
+
+def test_content_rejects_broken_json(client, content_file):
+    r = client.put("/content", content=b"{not json", headers={"X-Presenter-Key": KEY})
+    assert r.status_code == 400

@@ -5,10 +5,14 @@
 - votes: קול אחד לכל clientId לכל סקר. רענון לא מכפיל קול, ומי שהתנתק לא מוריד קול.
 - meta: מספר הפריטים ומפת הסקרים, שהמציג שולח מתוך ITEMS כדי שהתוכן יישאר במקום אחד.
 
+תוכן: ברירת המחדל כתובה בדף עצמו. מסך העריכה (?role=edit) שומר גרסה ערוכה ב־CONTENT_PATH,
+והשרת מגיש אותה ב־/content.js. בלי קובץ, הדף משתמש בברירת המחדל.
+
 שום קלט מהדפדפן לא נחשב אמין: הכול עובר בדיקה, גודל ההודעה וקצב ההודעות מוגבלים.
 """
 
 import asyncio
+import hashlib
 import hmac
 import io
 import json
@@ -25,11 +29,12 @@ from typing import Any
 
 import segno
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, PlainTextResponse, Response
+from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse, Response
 
 log = logging.getLogger("lebanon82")
 
 STATIC = Path(__file__).parent / "static"
+CONTENT_PATH = Path(os.environ.get("CONTENT_PATH") or Path(__file__).parent / "data" / "content.json")
 
 MAX_MESSAGE_BYTES = 16 * 1024
 MAX_CONNECTIONS = 150
@@ -41,11 +46,16 @@ MAX_POLLS = 20
 MAX_OPTIONS = 10
 PEERS_DEBOUNCE = 0.15
 WELCOME_TIMEOUT = 10
+MAX_CONTENT_BYTES = 256 * 1024
+MAX_TEXT = 2000
 
 ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 PID_RE = re.compile(r"^[A-Za-z0-9_-]{1,20}$")
-ROLES = {"viewer", "screen", "remote", "local", "script"}
-ADMIN_ROLES = {"screen", "remote"}
+ROLES = {"viewer", "screen", "remote", "local", "script", "edit"}
+ADMIN_ROLES = {"screen", "remote", "edit"}
+PEOPLE_KEYS = ("pm", "dm", "cos", "intel", "news", "room")
+MEMBER_KEYS = ("pm", "dm", "cos", "intel")
+COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
 def presenter_key() -> str:
@@ -126,6 +136,173 @@ def clean_state(d: Any, meta: dict[str, Any] | None) -> dict[str, Any] | None:
                 if a is not None:
                     s[key][pid] = a
     return s
+
+
+class ContentError(ValueError):
+    pass
+
+
+def _text(d: dict[str, Any], key: str, where: str, required: bool = True, limit: int = MAX_TEXT) -> str | None:
+    v = d.get(key)
+    if v is None and not required:
+        return None
+    if not isinstance(v, str) or len(v) > limit or (required and not v.strip()):
+        raise ContentError(f"{where}: השדה '{key}' חסר, ריק או ארוך מדי")
+    return v
+
+
+def _person(d: dict[str, Any], key: str, where: str, required: bool = True) -> str | None:
+    v = d.get(key)
+    if v is None and not required:
+        return None
+    if v not in PEOPLE_KEYS:
+        raise ContentError(f"{where}: שולח לא מוכר")
+    return v
+
+
+def clean_item(it: Any, i: int, n_segs: int, poll_ids: set[str]) -> dict[str, Any]:
+    where = f"פריט {i + 1}"
+    if not isinstance(it, dict):
+        raise ContentError(f"{where}: לא תקין")
+    t, seg = it.get("type"), _int(it.get("seg"), 0, n_segs - 1)
+    if seg is None:
+        raise ContentError(f"{where}: חלק לא תקין")
+    out: dict[str, Any] = {"seg": seg, "type": t}
+    if t in ("date", "news"):
+        out["text"] = _text(it, "text", where)
+    elif t == "msg":
+        out["from"] = _person(it, "from", where)
+        out["text"] = _text(it, "text", where)
+    elif t == "deleted":
+        out["from"] = _person(it, "from", where)
+    elif t == "system":
+        out["text"] = _text(it, "text", where)
+        leaves = it.get("leaves")
+        if leaves not in (None, "", *MEMBER_KEYS):
+            raise ContentError(f"{where}: מי שעוזב לא מוכר")
+        if leaves:
+            out["leaves"] = leaves
+    elif t == "poll":
+        pid = it.get("id")
+        if not isinstance(pid, str) or not PID_RE.match(pid) or pid in poll_ids:
+            raise ContentError(f"{where}: מזהה סקר לא תקין או כפול")
+        poll_ids.add(pid)
+        opts = it.get("options")
+        if (not isinstance(opts, list) or not 2 <= len(opts) <= MAX_OPTIONS
+                or any(not isinstance(o, str) or not o.strip() or len(o) > 200 for o in opts)):
+            raise ContentError(f"{where}: לסקר צריכות להיות 2 עד {MAX_OPTIONS} אפשרויות, בלי שורות ריקות")
+        out.update(id=pid, **{"from": _person(it, "from", where)}, q=_text(it, "q", where), options=list(opts))
+    elif t == "lesson":
+        out["title"] = _text(it, "title", where)
+        out["body"] = _text(it, "body", where)
+        m = it.get("moment")
+        if not isinstance(m, dict):
+            raise ContentError(f"{where}: חסר 'הרגע'")
+        mo: dict[str, Any] = {"cap": _text(m, "cap", where, required=False, limit=200) or "",
+                              "from": _person(m, "from", where)}
+        if m.get("deleted") is True:
+            mo["deleted"] = True
+        else:
+            mo["text"] = _text(m, "text", where)
+        out["moment"] = mo
+    elif t == "closing":
+        out["q"] = _text(it, "q", where)
+        out["answer"] = _text(it, "answer", where)
+    else:
+        raise ContentError(f"{where}: סוג לא מוכר")
+    note = _text(it, "note", where, required=False)
+    if note and note.strip():
+        out["note"] = note
+    return out
+
+
+def clean_content(c: Any) -> dict[str, Any]:
+    """בודק תוכן שנשלח ממסך העריכה. לא משנה טקסט, רק דוחה מה שלא תקין."""
+    if not isinstance(c, dict):
+        raise ContentError("תוכן לא תקין")
+    people_in = c.get("people")
+    if not isinstance(people_in, dict):
+        raise ContentError("חסרים המשתתפים")
+    people = {}
+    for k in PEOPLE_KEYS:
+        p = people_in.get(k)
+        if not isinstance(p, dict) or not isinstance(p.get("color"), str) or not COLOR_RE.match(p["color"]):
+            raise ContentError(f"משתתף '{k}' לא תקין")
+        people[k] = {"name": _text(p, "name", "משתתף", limit=60), "color": p["color"]}
+
+    segs_in = c.get("segments")
+    if not isinstance(segs_in, list) or not 1 <= len(segs_in) <= MAX_SEGMENTS:
+        raise ContentError("חלוקת החלקים לא תקינה")
+    segments = []
+    for i, sg in enumerate(segs_in):
+        where = f"חלק {i + 1}"
+        if not isinstance(sg, dict):
+            raise ContentError(f"{where}: לא תקין")
+        budget = _int(sg.get("budget"), 0, 3600)
+        if budget is None:
+            raise ContentError(f"{where}: זמן לא תקין")
+        segments.append({"name": _text(sg, "name", where, limit=80), "budget": budget,
+                         "cut": _text(sg, "cut", where, required=False) or ""})
+
+    cover_in = c.get("cover")
+    if not isinstance(cover_in, dict):
+        raise ContentError("חסר מסך הפתיחה")
+    lines = cover_in.get("lines")
+    if not isinstance(lines, list) or len(lines) > 6 or any(not isinstance(x, str) or len(x) > 300 for x in lines):
+        raise ContentError("מסך הפתיחה: השורות לא תקינות")
+    cover = {"lines": [x for x in lines if x.strip()],
+             "q": _text(cover_in, "q", "מסך הפתיחה", limit=200),
+             "go": _text(cover_in, "go", "מסך הפתיחה", required=False, limit=300) or ""}
+
+    items_in = c.get("items")
+    if not isinstance(items_in, list) or not 1 <= len(items_in) <= MAX_STEP:
+        raise ContentError("רשימת ההודעות לא תקינה")
+    poll_ids: set[str] = set()
+    items = [clean_item(it, i, len(segments), poll_ids) for i, it in enumerate(items_in)]
+    if len(poll_ids) > MAX_POLLS:
+        raise ContentError(f"יותר מ־{MAX_POLLS} סקרים")
+    if any(a["seg"] > b["seg"] for a, b in zip(items, items[1:])):
+        raise ContentError("ההודעות לא מסודרות לפי החלקים")
+
+    return {"people": people, "segments": segments, "cover": cover,
+            "coverNote": _text(c, "coverNote", "מסך הפתיחה", required=False) or "", "items": items}
+
+
+def load_content() -> dict[str, Any] | None:
+    try:
+        return clean_content(json.loads(CONTENT_PATH.read_text("utf-8")))
+    except FileNotFoundError:
+        return None
+    except (OSError, ValueError) as e:
+        log.error("ignoring %s: %s", CONTENT_PATH, e)
+        return None
+
+
+def content_rev(c: dict[str, Any] | None) -> str:
+    """מזהה גרסת התוכן. קבוע בין הפעלות של השרת, ומשתנה עם כל שינוי בתוכן."""
+    return hashlib.sha256(json.dumps(c, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:12] if c else "default"
+
+
+_rev: str | None = None
+
+
+def current_rev() -> str:
+    global _rev
+    if _rev is None:
+        _rev = content_rev(load_content())
+    return _rev
+
+
+def save_content(c: dict[str, Any] | None) -> None:
+    global _rev
+    _rev = None
+    if c is None:
+        CONTENT_PATH.unlink(missing_ok=True)
+        return
+    CONTENT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp = CONTENT_PATH.with_suffix(".tmp")
+    tmp.write_text(json.dumps(c, ensure_ascii=False, indent=1), "utf-8")
+    tmp.replace(CONTENT_PATH)
 
 
 def newer(a: dict[str, Any], b: dict[str, Any] | None) -> bool:
@@ -220,6 +397,12 @@ class Room:
         bucket[client_id] = o
         return True
 
+    async def content_changed(self) -> None:
+        """התוכן השתנה: ההצבעות והמיקום לא תקפים יותר. כל המכשירים נטענים מחדש."""
+        self.state = self.meta = None
+        self.votes.clear()
+        await self.broadcast({"type": "reload"})
+
     def handle(self, c: Conn, msg: dict[str, Any]) -> bool:
         """מחזיר True אם השתנה משהו שצריך לשדר ב־peers."""
         t = msg.get("type")
@@ -249,8 +432,17 @@ if not presenter_key():
 
 
 @app.get("/")
-async def index() -> FileResponse:
+async def index(request: Request) -> Response:
+    # קישורים ישנים (/?role=screen&key=...) עוברים לדף הבקרה. הדף הראשי הוא תמיד מסך צופה.
+    if "key" in request.query_params or request.query_params.get("role") in ADMIN_ROLES:
+        return RedirectResponse("/admin?" + request.url.query, status_code=307)
     return FileResponse(STATIC / "index.html", media_type="text/html", headers=NO_CACHE)
+
+
+@app.get("/admin")
+async def admin_page() -> FileResponse:
+    """דף הבקרה: בחירת תפקיד (מסך, שלט, עריכה...). ההרשאה עצמה נבדקת מול PRESENTER_KEY ב־WebSocket."""
+    return FileResponse(STATIC / "index.html", media_type="text/html", headers={**NO_CACHE, "X-Robots-Tag": "noindex"})
 
 
 @app.get("/sync.js")
@@ -271,6 +463,39 @@ async def qr(request: Request) -> Response:
     """QR לכתובת הצופים, לפי הכתובת שהאתר רץ עליה בפועל (או PUBLIC_URL אם הוגדר)."""
     url = os.environ.get("PUBLIC_URL") or str(request.base_url)
     return Response(qr_svg(url), media_type="image/svg+xml", headers=NO_CACHE)
+
+
+@app.get("/content.js")
+async def content_js() -> Response:
+    c = load_content()
+    body = ("window.LB82_CONTENT = " + (json.dumps(c, ensure_ascii=False).replace("</", "<\\/") if c else "null") + ";\n"
+            f"window.LB82_REV = {json.dumps(content_rev(c))};\n")
+    return Response(body, media_type="text/javascript", headers=NO_CACHE)
+
+
+@app.put("/content")
+async def put_content(request: Request) -> PlainTextResponse:
+    if not is_presenter(request.headers.get("x-presenter-key")):
+        return PlainTextResponse("אין הרשאה", status_code=403)
+    raw = await request.body()
+    if len(raw) > MAX_CONTENT_BYTES:
+        return PlainTextResponse("התוכן גדול מדי", status_code=413)
+    try:
+        c = clean_content(json.loads(raw))
+    except ValueError as e:  # כולל ContentError ו־JSON שבור
+        return PlainTextResponse(str(e) if isinstance(e, ContentError) else "תוכן לא תקין", status_code=400)
+    save_content(c)
+    await room.content_changed()
+    return PlainTextResponse("ok")
+
+
+@app.delete("/content")
+async def delete_content(request: Request) -> PlainTextResponse:
+    if not is_presenter(request.headers.get("x-presenter-key")):
+        return PlainTextResponse("אין הרשאה", status_code=403)
+    save_content(None)
+    await room.content_changed()
+    return PlainTextResponse("ok")
 
 
 @app.get("/healthz")
@@ -321,7 +546,8 @@ async def ws_endpoint(ws: WebSocket) -> None:
             if msg is None or not c.allow():
                 continue
             if msg.get("type") == "state":
-                if not c.admin:
+                # מכשיר שנטען לפני שהתוכן השתנה עדיין מחזיק מיקום של התוכן הישן.
+                if not c.admin or msg.get("rev") != current_rev():
                     continue
                 meta = clean_meta(msg.get("meta"))
                 if meta:

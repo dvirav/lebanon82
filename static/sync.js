@@ -14,13 +14,20 @@
   let clientId = ls.get(localStorage, 'lb82-client') || rand();
   ls.set(localStorage, 'lb82-client', clientId);
 
-  // המפתח מגיע ב־URL, נשמר ללשונית הזאת בלבד, ונמחק משורת הכתובת כדי שלא יופיע על המקרן.
+  // המפתח קיים רק בדף הבקרה (/admin). בדף הראשי לא שולחים מפתח בכלל, כך שהוא תמיד מסך צופה.
+  // בדף הבקרה המפתח מגיע מה־URL או מטופס הכניסה, נשמר במכשיר, ונמחק משורת הכתובת כדי שלא יופיע על המקרן.
+  const adminPage = /^\/admin\/?$/.test(location.pathname);
   const url = new URL(location.href);
-  const urlKey = url.searchParams.get('key');
-  if (urlKey) ls.set(sessionStorage, 'lb82-key', urlKey);
-  const key = urlKey || ls.get(sessionStorage, 'lb82-key') || '';
-  const urlRole = url.searchParams.get('role');
-  if (urlRole && ['screen', 'remote', 'viewer', 'local', 'script'].includes(urlRole)) ls.set(localStorage, 'lb82-role', urlRole);
+  const urlKey = adminPage ? url.searchParams.get('key') : null;
+  if (urlKey) ls.set(localStorage, 'lb82-key', urlKey);
+  const key = adminPage ? (urlKey || ls.get(localStorage, 'lb82-key') || '') : '';
+  window.LB82_AUTH = Object.freeze({
+    adminPage, hasKey: !!key,
+    login: k => { ls.set(localStorage, 'lb82-key', String(k || '').trim()); location.reload(); },
+    logout: () => { try { localStorage.removeItem('lb82-key'); localStorage.removeItem('lb82-role'); } catch (e) {} location.reload(); },
+  });
+  const urlRole = adminPage ? url.searchParams.get('role') : null;
+  if (urlRole && ['screen', 'remote', 'viewer', 'local', 'script', 'edit'].includes(urlRole)) ls.set(localStorage, 'lb82-role', urlRole);
   if (urlKey || urlRole) {
     url.searchParams.delete('key'); url.searchParams.delete('role');
     history.replaceState(null, '', url.pathname + url.search + url.hash);
@@ -88,6 +95,7 @@
         if (m.state) deliver(m.state);
       } else if (m.type === 'state') deliver(m.data);
       else if (m.type === 'peers') setPeers(m.peers, true);
+      else if (m.type === 'reload') (handlers.reload || []).forEach(f => { try { f({topic: 'reload'}); } catch (e) { console.error(e); } });
     };
     sock.onclose = () => {
       if (ws !== sock) return;
@@ -106,7 +114,7 @@
     emit: async (topic, data) => {
       if (!admin) throw {code: 'not_permitted'};
       if (topic !== 'state') return;
-      if (!send({type: 'state', data, meta: meta()})) throw {code: 'not_connected'};
+      if (!send({type: 'state', data, meta: meta(), rev: window.LB82_REV})) throw {code: 'not_connected'};
     },
     on: (topic, fn) => {
       (handlers[topic] ||= []).push(fn);
@@ -139,5 +147,15 @@
   const canEdit = () => Promise.race([welcome, new Promise(r => setTimeout(() => r(admin), 10000))]);
   const user = Object.freeze({canEdit, isOwner: canEdit});
 
-  window.claude = Object.freeze({use: async name => name === 'room' ? room : name === 'user' ? user : null});
+  // שמירת התוכן ממסך העריכה. המפתח נשאר כאן ולא נחשף לדף.
+  async function contentReq(method, body) {
+    const r = await fetch('/content', {method, headers: {'Content-Type': 'application/json', 'X-Presenter-Key': key}, body});
+    if (!r.ok) throw new Error((await r.text()) || ('שגיאה ' + r.status));
+  }
+  const content = Object.freeze({
+    save: data => contentReq('PUT', JSON.stringify(data)),
+    reset: () => contentReq('DELETE'),
+  });
+
+  window.claude = Object.freeze({use: async name => name === 'room' ? room : name === 'user' ? user : name === 'content' ? content : null});
 })();

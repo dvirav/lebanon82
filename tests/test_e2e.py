@@ -19,11 +19,11 @@ PHONE = {"width": 390, "height": 844}
 
 
 @pytest.fixture(scope="module")
-def base_url():
+def base_url(tmp_path_factory):
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
-    env = {**os.environ, "PRESENTER_KEY": KEY}
+    env = {**os.environ, "PRESENTER_KEY": KEY, "CONTENT_PATH": str(tmp_path_factory.mktemp("data") / "content.json")}
     proc = subprocess.Popen([sys.executable, "-m", "uvicorn", "app:app", "--port", str(port)],
                             cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     url = f"http://127.0.0.1:{port}"
@@ -65,14 +65,14 @@ def test_full_show(base_url, browser):
         pg.wait_for_function(js, timeout=timeout)
 
     # --- המציג: מסך ושלט, התפקיד והמפתח מה־URL
-    screen = device("screen", f"/?role=screen&key={KEY}")
+    screen = device("screen", f"/admin?role=screen&key={KEY}")
     wait(screen, "mode === 'screen' && connected")
     assert "key" not in screen.url, "המפתח לא אמור להישאר בשורת הכתובת"
     assert screen.is_visible("#qrbox")
     assert screen.evaluate("document.querySelector('#qrbox img').naturalWidth") > 0
     screen.screenshot(path=SHOTS / "01_screen_cover.png")
 
-    remote = device("remote", f"/?role=remote&key={KEY}", PHONE)
+    remote = device("remote", f"/admin?role=remote&key={KEY}", PHONE)
     wait(remote, "mode === 'remote' && connected")
 
     # --- צופים: בלי מפתח, ישר למצב צופה
@@ -162,6 +162,73 @@ def test_full_show(base_url, browser):
     assert errors == []
 
 
+def test_editor(base_url, browser, tmp_path):
+    """עריכת הודעה במסך העריכה: נשמרת בשרת, והצופה והשלט נטענים מחדש עם הטקסט החדש."""
+    errors = []
+
+    def device(name, path, viewport=None):
+        ctx = browser.new_context(viewport=viewport or {"width": 1280, "height": 900}, accept_downloads=True)
+        ctx.route("**/fonts.g*/**", lambda r: r.abort())
+        pg = ctx.new_page()
+        pg.on("pageerror", lambda e: errors.append(f"{name}: {e}"))
+        pg.on("dialog", lambda d: d.accept())
+        pg.goto(base_url + path)
+        return pg
+
+    editor = device("editor", f"/admin?role=edit&key={KEY}")
+    editor.wait_for_function("mode === 'edit'")
+    remote = device("remote", f"/admin?role=remote&key={KEY}", PHONE)
+    viewer = device("viewer", "/", PHONE)
+    viewer.wait_for_function("mode === 'viewer' && connected")
+    remote.click("#rNext")
+    viewer.wait_for_function("state.step === 1")
+
+    first = editor.locator("#ei-1 textarea[data-k='text']")
+    first.fill("טקסט חדש מהעורך")
+    editor.locator("#ei-1 textarea[data-k='note']").fill("הערה חדשה")
+    editor.fill("input[data-c='1'][data-k='cover.q']", "שאלה חדשה?")
+    editor.select_option("#edAdd-1", "msg")
+    editor.click("button[data-act='add'][data-seg='1']")
+    assert "שינויים שלא נשמרו" in editor.inner_text("#edStatus")
+    editor.screenshot(path=SHOTS / "08_editor.png")
+
+    # שדה חובה ריק: השרת דוחה ומסביר
+    editor.click("#edSave")
+    editor.wait_for_function("document.getElementById('edStatus').textContent.startsWith('לא נשמר')")
+    editor.click("#ei-7 button[data-act='del']")
+    editor.click("#edSave")
+    editor.wait_for_function("document.getElementById('edStatus').textContent.startsWith('נשמר')")
+
+    viewer.wait_for_function("typeof mode !== 'undefined' && window.LB82_CONTENT && mode === 'viewer' && connected")
+    remote.wait_for_function("typeof mode !== 'undefined' && window.LB82_CONTENT && mode === 'remote' && connected")
+    assert viewer.inner_text(".cover-text .q") == "שאלה חדשה?"
+    assert remote.evaluate("state.step") == 0, "השמירה מאפסת את המופע"
+    remote.click("#rNext")
+    remote.click("#rNext")
+    viewer.wait_for_function("document.getElementById('chat').innerText.includes('טקסט חדש מהעורך')")
+    assert remote.inner_text("#rNote") == "הערה חדשה"
+
+    # גיבוי: קובץ עצמאי עם הגרסה השמורה
+    with editor.expect_download() as dl:
+        editor.click("button[data-act='download']")
+    backup = tmp_path / "backup.html"
+    dl.value.save_as(backup)
+    pg = browser.new_page()
+    pg.on("pageerror", lambda e: errors.append(f"backup: {e}"))
+    pg.goto(backup.as_uri())
+    pg.click("#roleLocal")
+    pg.keyboard.press("ArrowRight")
+    pg.keyboard.press("ArrowRight")
+    pg.wait_for_function("document.getElementById('chat').innerText.includes('טקסט חדש מהעורך')")
+
+    # חזרה לטקסט המקורי
+    editor.click("button[data-act='defaults']")
+    editor.wait_for_function("document.getElementById('edStatus').textContent.startsWith('חזרנו')")
+    viewer.wait_for_function("typeof mode !== 'undefined' && window.LB82_CONTENT === null && mode === 'viewer'")
+    assert viewer.inner_text(".cover-text .q") == "איך זה קורה?"
+    assert errors == []
+
+
 def test_standalone_file_still_works(browser):
     """הקובץ המקורי, בלי שרת: מצגת עצמאית (הגיבוי ביום המופע)."""
     pg = browser.new_page(viewport={"width": 1280, "height": 800})
@@ -176,3 +243,32 @@ def test_standalone_file_still_works(browser):
     pg.click("#poll-p1 .opt[data-i='2']")
     assert pg.evaluate("tally('p1').total") == [0, 0, 1]
     assert errors == []
+
+
+def test_admin_login(base_url, browser):
+    ctx = browser.new_context(viewport=PHONE)
+    page = ctx.new_page()
+    # הדף הראשי: צופה בלבד, בלי בחירת תפקיד ובלי כפתור החלפה.
+    page.goto(base_url + "/")
+    page.wait_for_selector("#stage:not(.hidden)")
+    assert not page.is_visible("#picker") and not page.is_visible("#roleBtn")
+    # דף הבקרה בלי מפתח: טופס כניסה בלבד.
+    page.goto(base_url + "/admin")
+    page.wait_for_selector("#login:not(.hidden)")
+    assert not page.is_visible("#roleScreen") and not page.is_visible("#loginErr")
+    page.fill("#loginKey", "wrong")
+    page.click("#login button")
+    page.wait_for_selector("#loginErr:not(.hidden)")
+    page.fill("#loginKey", KEY)
+    page.click("#login button")
+    page.wait_for_selector("#roleRemote:not(.hidden)")
+    assert page.is_visible("#logoutBtn")
+    # המפתח נשמר במכשיר, אבל הדף הראשי עדיין מסך צופה.
+    page.goto(base_url + "/")
+    page.wait_for_selector("#stage:not(.hidden)")
+    assert not page.is_visible("#picker")
+    page.goto(base_url + "/admin")
+    page.wait_for_selector("#roleRemote:not(.hidden)")
+    page.click("#logoutBtn")
+    page.wait_for_selector("#login:not(.hidden)")
+    ctx.close()
