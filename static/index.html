@@ -150,9 +150,10 @@ kbd{font-family:inherit;background:var(--bar);border-radius:4px;padding:1px 6px;
 .rc h3{margin:0 0 6px;font-size:12px;font-weight:500;color:var(--r-sub)}
 .rc .v{font-size:16px;line-height:1.5}
 .rc.note{border-color:var(--accent)}
-.rc.note .v{font-size:18px;font-weight:500}
-.rc.cut .v{font-size:15px;color:var(--r-sub)}
-.rc.cut.hot{border-color:var(--bad)} .rc.cut.hot .v{color:var(--r-text)}
+.rc.note .v{font-size:20px;font-weight:500;line-height:1.45}
+.rc.now .rdate{font-size:13px;color:var(--r-sub);margin-bottom:6px}
+.rc.now .rwho{font-size:15px;font-weight:700;color:var(--r-sub);margin-bottom:2px}
+.rc.now .v{font-size:23px;font-weight:600;line-height:1.4}
 .tally .trow{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--r-line)}
 .tally .trow:first-of-type{border-top:0}
 .tally .tl{flex:1;font-size:15px}
@@ -163,7 +164,7 @@ kbd{font-family:inherit;background:var(--bar);border-radius:4px;padding:1px 6px;
 .r-foot button{border:0;border-radius:14px;cursor:pointer;font-weight:700}
 #rPrev{width:84px;background:var(--r-card);border:1px solid var(--r-line);font-size:17px}
 #rNext{flex:1;background:var(--accent);color:var(--accent-ink);font-size:22px;padding:18px 0}
-#rNext:disabled{opacity:.4}
+#rNext:disabled,#rPrev:disabled{opacity:.4}
 .r-menu{display:flex;gap:8px;flex-wrap:wrap}
 .r-menu button{background:none;border:1px solid var(--r-line);border-radius:9px;padding:6px 10px;font-size:13px;color:var(--r-sub);cursor:pointer}
 .r-conn{font-size:13px;color:var(--r-sub);display:flex;align-items:center;gap:6px}
@@ -321,10 +322,9 @@ kbd{font-family:inherit;background:var(--bar);border-radius:4px;padding:1px 6px;
     <div class="r-seg"><b id="rSegName"></b><span id="rSegLbl" style="color:var(--r-sub);font-size:13px"></span></div>
   </div>
   <div class="r-body">
+    <div class="rc now"><h3>על המסך עכשיו</h3><div class="rdate hidden" id="rDate"></div><div class="rwho hidden" id="rWho"></div><div class="v" id="rNow"></div></div>
     <div class="rc note"><h3>מה להגיד עכשיו</h3><div class="v" id="rNote"></div></div>
-    <div class="rc"><h3>על המסך עכשיו</h3><div class="v" id="rNow"></div></div>
     <div class="rc tally hidden" id="rTally"></div>
-    <div class="rc cut" id="rCut"><h3>אם מאחרים בחלק הזה</h3><div class="v" id="rCutTxt"></div></div>
     <div class="rc"><h3>הבא</h3><div class="v" id="rNext2" style="color:var(--r-sub)"></div></div>
     <div class="r-row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
       <span class="r-conn"><span class="dot" id="rDot"></span><span id="rConn">לא מחובר</span></span>
@@ -771,6 +771,21 @@ function preview(i){
     case 'closing': return '📌 סיכום: '+it.q;
   }
 }
+// the current item split into sender and text, for the big "on screen now" card
+function nowParts(i){
+  const it = ITEMS[i];
+  if(!it) return {who:'', text:preview(i)};
+  if(it.type==='msg' || it.type==='news' || it.type==='deleted'){
+    const who = PEOPLE[it.type==='news' ? 'news' : it.from].name;
+    return {who, text: it.type==='deleted' ? '🚫 הודעה זו נמחקה' : it.text};
+  }
+  return {who:'', text:preview(i)};
+}
+// the latest date shown up to item i (inclusive)
+function dateAt(i){
+  for(let j=i;j>=0;j--) if(ITEMS[j].type==='date') return ITEMS[j].text;
+  return '';
+}
 function noteFor(step){
   if(step===0) return COVER_NOTE;
   const it = ITEMS[step-1];
@@ -796,10 +811,13 @@ function renderClock(){
 function renderRemote(){
   const step = state.step;
   $('rNote').textContent = noteFor(step);
-  $('rNow').textContent = preview(step-1);
+  const now = nowParts(step-1), date = step>0 && ITEMS[step-1].type!=='date' ? dateAt(step-1) : '';
+  $('rNow').textContent = now.text;
+  $('rWho').textContent = now.who; $('rWho').classList.toggle('hidden', !now.who);
+  $('rDate').innerHTML = date ? '📅 <bdi>'+esc(date)+'</bdi>' : ''; $('rDate').classList.toggle('hidden', !date);
   $('rNext2').textContent = step>=N ? 'זה הסוף. לעבור למשוב.' : preview(step);
-  $('rCutTxt').textContent = SEGMENTS[segOf(step)].cut;
   $('rNext').disabled = step>=N;
+  $('rPrev').disabled = step===0;
   renderTally();
   renderClock();
   renderConn();
