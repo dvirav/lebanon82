@@ -192,6 +192,9 @@ def clean_item(it: Any, i: int, n_segs: int, poll_ids: set[str]) -> dict[str, An
                 or any(not isinstance(o, str) or not o.strip() or len(o) > 200 for o in opts)):
             raise ContentError(f"{where}: לסקר צריכות להיות 2 עד {MAX_OPTIONS} אפשרויות, בלי שורות ריקות")
         out.update(id=pid, **{"from": _person(it, "from", where)}, q=_text(it, "q", where), options=list(opts))
+    elif t == "question":
+        out["from"] = _person(it, "from", where)
+        out["q"] = _text(it, "q", where)
     elif t == "lesson":
         out["title"] = _text(it, "title", where)
         out["body"] = _text(it, "body", where)
@@ -205,6 +208,8 @@ def clean_item(it: Any, i: int, n_segs: int, poll_ids: set[str]) -> dict[str, An
         else:
             mo["text"] = _text(m, "text", where)
         out["moment"] = mo
+    elif t == "summary":
+        out["text"] = _text(it, "text", where)
     elif t == "closing":
         out["q"] = _text(it, "q", where)
         out["answer"] = _text(it, "answer", where)

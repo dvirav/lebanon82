@@ -138,7 +138,9 @@ def test_full_show(base_url, browser):
         remote.click("#rNext")
     wait(screen, f"state.step === {n}")
     screen.wait_for_timeout(300)
-    assert screen.is_visible("#lesson")
+    # הלקחים והסיכום רק בשלט. המסך נשאר על הצ'אט
+    assert not screen.is_visible("#lesson")
+    assert "מה עשינו" in remote.inner_text("#rWho")
     screen.screenshot(path=SHOTS / "05_screen_closing.png")
     remote.click("#rPrev")
     remote.click("#rPrev")

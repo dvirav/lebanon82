@@ -327,7 +327,7 @@ kbd{font-family:inherit;background:var(--bar);border-radius:4px;padding:1px 6px;
     <div class="r-seg"><b id="rSegName"></b><span id="rSegLbl" style="color:var(--r-sub);font-size:13px"></span></div>
   </div>
   <div class="r-body">
-    <div class="rc now"><h3>על המסך עכשיו</h3><div class="rdate hidden" id="rDate"></div><div class="rwho hidden" id="rWho"></div><div class="v" id="rNow"></div></div>
+    <div class="rc now"><h3 id="rNowLbl">על המסך עכשיו</h3><div class="rdate hidden" id="rDate"></div><div class="rwho hidden" id="rWho"></div><div class="v" id="rNow"></div></div>
     <div class="rc note"><h3>מה להגיד עכשיו</h3><div class="v" id="rNote"></div></div>
     <div class="rc tally hidden" id="rTally"></div>
     <div class="rc"><h3>הבא</h3><div class="v" id="rNext2" style="color:var(--r-sub)"></div></div>
@@ -436,7 +436,7 @@ let ITEMS = [
   {seg:4, type:'date', text:'14 בספטמבר 1982'},
   {seg:4, type:'news', text:'🔴 באשיר ג׳ומייל נרצח בפיצוץ במטה מפלגתו.'},
   {seg:4, type:'date', text:'16–18 בספטמבר 1982'},
-  {seg:4, type:'news', text:'🔴 כוחות הפלנגות נכנסים למחנות הפליטים סברה ושתילה, באזור שבשליטת צה״ל. מאות אזרחים נרצחים.', note:'לומר בשקט ולא להאיץ. זה האירוע ששינה את דעת הקהל.'},
+  {seg:4, type:'news', text:'🔴 כוחות הפלנגות נכנסים למחנות הפליטים סברה ושתילה, באזור שבשליטת צה״ל. מאות אזרחים נרצחים.', note:'לומר בשקט ולא להאיץ. זה האירוע ששינה את דעת הקהל.\nכוחות הפלנגות מיליציה נוצרית-מארונית לבנונית (הכתאאב), בעלת בריתה של ישראל. אנשיה היו מוכי אבל וזעם אחרי רצח מנהיגם, והיו ביניהם לבין הפלסטינים שנים של איבה ומעשי טבח הדדיים במלחמת האזרחים.\nהאזור בשליטה של צהל'},
 
   /* ---- תוצאות ---- */
   {seg:5, type:'date', text:'25 בספטמבר 1982'},
@@ -451,11 +451,12 @@ let ITEMS = [
   {seg:5, type:'news', text:'צה״ל יוצא מלבנון, 18 שנה אחרי שחצה את הגבול.', note:'לעצור. "חזרנו לשאלה מההתחלה: איך זה קרה? לפני שאני אגיד מה אני לקחתי מזה, תורכם."'},
 
   /* ---- לקחים וסגירה ---- */
-  {seg:6, type:'poll', id:'p3', from:'room', q:'איזה רגע הכי מסביר איך 40 ק״מ הפכו ל־18 שנה?', options:['ממשיכים אחרי שהיעד הושג','ההודעה שנמחקה','אלי גבע מבקש לרדת מפיקוד','רגע אחר'], note:'30 שניות. אחר כך לבקש משניים לנסח לקח במשפט אחד: "מה קצין צריך לקחת מהרגע הזה?" אחד מהאפשרות המובילה, ומי שבחר "רגע אחר" אם יש. לא להתווכח, רק לחזור על הניסוח בקול. לזכור מי אמר מה, ולהזכיר אותו בשם כשהלקח מתחבר.'},
+  {seg:6, type:'question', from:'room', q:'איזה רגע הכי מסביר איך 40 ק״מ הפכו ל־18 שנה?', note:'30 שניות. אחר כך לבקש משניים לנסח לקח במשפט אחד: "מה קצין צריך לקחת מהרגע הזה?" אחד מהאפשרות המובילה, ומי שבחר "רגע אחר" אם יש. לא להתווכח, רק לחזור על הניסוח בקול. לזכור מי אמר מה, ולהזכיר אותו בשם כשהלקח מתחבר.'},
   {seg:6, type:'lesson', title:'כל צעד נראה הגיוני. הסכום הוא 18 שנה.', body:'אף החלטה במלחמה הזאת לא נראתה קיצונית ברגע שבו התקבלה. לכן בכל שלב עוצרים ושואלים: האם זו עדיין המשימה שקיבלנו?', moment:{cap:'הרגע:', from:'room', text:'📊 היעד המוצהר הושג. מה עכשיו?'}, note:'לחבר להצבעה השנייה. אם רבים בחרו להמשיך: "זה בדיוק העניין, זה נראה הגיוני." אם רובכם עצרתם: "כאן, בלי לחץ ובלי מומנטום, קל לעצור. בזמן אמת זה הרבה יותר קשה." ולנו כקצינים: לחזור למשימה ולשאול אם היא עדיין אותה משימה.'},
   {seg:6, type:'lesson', title:'מדווחים אמת כלפי מעלה, גם כשהיא לא נוחה.', body:'מי שמחזיק במידע ולא מעביר אותו לוקח מהממונה את היכולת להחליט. דיווח חלקי הוא החלטה בשם מישהו אחר.', moment:{cap:'הרגע:', from:'dm', deleted:true}, note:'לחזור לשאלה "מה היה כתוב שם?". להגיד: היסטוריונים טענו שהקבינט אישר מהלכים שלב אחר שלב בלי תמונה מלאה, ושר הביטחון חלק על כך. הלקח לא תלוי בוויכוח הזה.'},
   {seg:6, type:'lesson', title:'כשקצין טוב מבקש לרדת מפיקוד, זו נורה אדומה.', body:'אלי גבע, מפקד חטיבה מצטיין, ביקש לא להוביל את חייליו לתוך ביירות. זה היה איתות מהשטח שמשהו השתבש. מפקד צריך להקשיב לאיתות, לא רק לטפל במי שהעלה אותו.', moment:{cap:'הרגע:', from:'news', text:'אל״מ אלי גבע מבקש להשתחרר מפיקוד על החטיבה.'}, note:'גבע לא היה סרבן. הוא ביקש להמשיך להילחם כמפקד טנק. להגיד: אנחנו נהיה בשני הצדדים, גם זה שמאותת וגם זה שצריך להקשיב.'},
-  {seg:6, type:'closing', q:'אז איך מבצע של 40 ק״מ הפך ל־18 שנה?', answer:'צעד אחר צעד, כשכל צעד נראה הגיוני, כשהמידע לא עלה במלואו למעלה, וכשאיתותי האזהרה לא נשמעו.', note:'לקרוא את התשובה. אם אחד הניסוחים שלהם מתחבר, להזכיר אותו בשם. תודה, ולעבור למשוב.'}
+  {seg:6, type:'closing', q:'אז איך מבצע של 40 ק״מ הפך ל־18 שנה?', answer:'צעד אחר צעד, כשכל צעד נראה הגיוני, כשהמידע לא עלה במלואו למעלה, וכשאיתותי האזהרה לא נשמעו.', note:'לקרוא את התשובה. אם אחד הניסוחים שלהם מתחבר, להזכיר אותו בשם. תודה, ולעבור למשוב.'},
+  {seg:6, type:'summary', text:'גוללנו את המלחמה, רקע, פרוץ, מהלך, מצור, תוצאות, לקחים. דיברנו על החלטות פיקודיות לאורך הדרך ויצאנו עם איזשהי סקרנות ועניין לגבי ההחלטות שבוצעו'}
 ];
 
 let COVER = {lines:['המבצע תוכנן לימים ספורים ולעומק של 40 ק״מ.','צה״ל יצא אחרי 18 שנה.'], q:'איך זה קורה?', go:'בואו נחזור לאיפה שהכל התחיל'};
@@ -566,7 +567,7 @@ let rendered = -1, lastFrom = null, typingTimer = null;
 function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function membersAt(step){ const gone = new Set(); for(let i=0;i<step;i++) if(ITEMS[i].leaves) gone.add(ITEMS[i].leaves); return ['pm','dm','cos','intel'].filter(k=>!gone.has(k)); }
 function setSub(step){ const h=$('hsub'); h.classList.remove('typing'); h.textContent = [...membersAt(step), 'news'].map(k=>PEOPLE[k].name.replace(/ /g,'\u00a0')).join(', '); }
-function isChatItem(it){ return it.type!=='lesson' && it.type!=='closing'; }
+function isChatItem(it){ return it.type!=='lesson' && it.type!=='closing' && it.type!=='summary'; }
 
 function makeNode(i, anim){
   const it = ITEMS[i];
@@ -578,6 +579,7 @@ function makeNode(i, anim){
   const b = document.createElement('div'); b.className='bubble';
   let html = lastFrom!==it.from ? `<div class="sender" style="color:${p.color}">${esc(p.name)}</div>` : '';
   if(it.type==='deleted') html += `<span class="deleted">🚫 הודעה זו נמחקה</span>`;
+  else if(it.type==='question') html += `<div class="pq">${esc(it.q)}</div>`;
   else if(it.type==='poll'){
     b.classList.add('poll'); b.id = 'poll-'+it.id;
     html += `<div class="pq">${esc(it.q)}</div><div class="phint" id="hint-${it.id}"></div>`;
@@ -608,7 +610,7 @@ function renderStage(prevStep){
   const it = ITEMS[step-1];
   const oneMore = (step===prevStep+1) && it && isChatItem(it) && rendered===step-1 && !typingTimer;
   if(oneMore){
-    const needsTyping = ['msg','news','poll','deleted'].includes(it.type) && !reduced();
+    const needsTyping = ['msg','news','poll','question','deleted'].includes(it.type) && !reduced();
     const place = ()=>{ chat.appendChild(makeNode(step-1,true)); rendered = step; setSub(step); updatePolls(); scrollDown(); };
     if(needsTyping){
       const h=$('hsub'); h.textContent = PEOPLE[it.from].name.replace(/^[^֐-׿A-Za-z]+/,'') + ' מקליד/ה…'; h.classList.add('typing');
@@ -631,9 +633,10 @@ function renderStage(prevStep){
   } else wait.classList.add('hidden');
   $('qrbox').classList.toggle('hidden', mode!=='screen');
 
-  // lesson overlay
+  // lesson overlay: only in the standalone presentation. With a remote, the lessons and the
+  // summary show on the remote only, and the screen and phones stay on the chat.
   const lv = $('lesson');
-  if(it && !isChatItem(it)){ lv.classList.remove('hidden'); renderLesson(it); }
+  if(it && !isChatItem(it) && mode==='local'){ lv.classList.remove('hidden'); renderLesson(it); }
   else lv.classList.add('hidden');
 }
 
@@ -647,6 +650,7 @@ renderCover();
 
 function renderLesson(it){
   const c = $('lcard');
+  if(it.type==='summary'){ c.innerHTML = `<div class="lpin">📌 מה עשינו</div><p class="lbody">${esc(it.text)}</p>`; return; }
   if(it.type==='closing'){
     const titles = ITEMS.filter(x=>x.type==='lesson').map(x=>`<li>${esc(x.title)}</li>`).join('');
     c.innerHTML = `<div class="lpin">📌 סיכום</div><h2 class="ltitle">${esc(it.q)}</h2><p class="lbody">${esc(it.answer)}</p><div class="closing"><ol>${titles}</ol></div>`;
@@ -731,15 +735,21 @@ function preview(i){
     case 'news': return PEOPLE.news.name+': '+it.text;
     case 'deleted': return PEOPLE[it.from].name+': 🚫 הודעה זו נמחקה';
     case 'poll': return '📊 סקר: '+it.q;
+    case 'question': return PEOPLE[it.from].name+': '+it.q;
     case 'system': return it.text;
     case 'lesson': return '📌 לקח '+it.n+': '+it.title;
     case 'closing': return '📌 סיכום: '+it.q;
+    case 'summary': return '📌 מה עשינו: '+it.text;
   }
 }
 // the current item split into sender and text, for the big "on screen now" card
 function nowParts(i){
   const it = ITEMS[i];
   if(!it) return {who:'', text:preview(i)};
+  if(it.type==='question') return {who:PEOPLE[it.from].name, text:it.q};
+  if(it.type==='lesson') return {who:'📌 לקח '+it.n+' מתוך '+LESSONS, text:it.title+'\n'+it.body};
+  if(it.type==='closing') return {who:'📌 סיכום', text:it.q+'\n'+it.answer};
+  if(it.type==='summary') return {who:'📌 מה עשינו', text:it.text};
   if(it.type==='msg' || it.type==='news' || it.type==='deleted'){
     const who = PEOPLE[it.type==='news' ? 'news' : it.from].name;
     return {who, text: it.type==='deleted' ? '🚫 הודעה זו נמחקה' : it.text};
@@ -776,8 +786,9 @@ function renderClock(){
 function renderRemote(){
   const step = state.step;
   $('rNote').textContent = noteFor(step);
-  const now = nowParts(step-1), date = step>0 && ITEMS[step-1].type!=='date' ? dateAt(step-1) : '';
+  const now = nowParts(step-1), date = step>0 && ITEMS[step-1].type!=='date' && isChatItem(ITEMS[step-1]) ? dateAt(step-1) : '';
   $('rNow').textContent = now.text;
+  $('rNowLbl').textContent = step>0 && !isChatItem(ITEMS[step-1]) ? 'רק אצלך בשלט (המסך נשאר על הצ׳אט)' : 'על המסך עכשיו';
   $('rWho').textContent = now.who; $('rWho').classList.toggle('hidden', !now.who);
   $('rDate').innerHTML = date ? '📅 <bdi>'+esc(date)+'</bdi>' : ''; $('rDate').classList.toggle('hidden', !date);
   $('rNext2').textContent = step>=N ? 'זה הסוף. לעבור למשוב.' : preview(step);
@@ -864,22 +875,24 @@ function renderScript(){
 /* =====================================================================
    Content editor (?role=edit). עורך עותק של התוכן ושומר אותו בשרת.
    ===================================================================== */
-const TYPE_LABEL = {date:'📅 תאריך', msg:'💬 הודעה', news:'📻 מבזק חדשות', deleted:'🚫 הודעה שנמחקה', poll:'📊 סקר',
-  system:'ℹ️ הודעת מערכת', lesson:'📌 לקח', closing:'📌 סיכום'};
+const TYPE_LABEL = {date:'📅 תאריך', msg:'💬 הודעה', news:'📻 מבזק חדשות', deleted:'🚫 הודעה שנמחקה', poll:'📊 סקר', question:'❓ שאלה לדיון',
+  system:'ℹ️ הודעת מערכת', lesson:'📌 לקח', closing:'📌 סיכום', summary:'📌 מה עשינו'};
 const FIELDS = {
   date:   [['text','תאריך','line']],
   msg:    [['from','שולח','person'], ['text','הודעה','area']],
   news:   [['text','מבזק','area']],
   deleted:[['from','שולח','person']],
   poll:   [['q','שאלה','line'], ['options','אפשרויות (שורה לכל אפשרות)','lines']],
+  question:[['from','שולח','person'], ['q','שאלה','line']],
   system: [['text','טקסט','line'], ['leaves','מי עוזב את הקבוצה','leaves']],
   lesson: [['title','כותרת','line'], ['body','הסבר','area'], ['moment.cap','כיתוב לפני הרגע','line'],
            ['moment.from','הרגע: שולח','person'], ['moment.deleted','הרגע הוא "הודעה זו נמחקה"','check'], ['moment.text','הרגע: טקסט','area']],
-  closing:[['q','שאלה','line'], ['answer','תשובה','area']]
+  closing:[['q','שאלה','line'], ['answer','תשובה','area']],
+  summary:[['text','סיכום','area']]
 };
 const NEW_ITEM = {date:{text:''}, msg:{from:'pm', text:''}, news:{text:''}, deleted:{from:'dm'},
-  poll:{from:'room', q:'', options:['','']}, system:{text:''},
-  lesson:{title:'', body:'', moment:{cap:'הרגע:', from:'room', text:''}}, closing:{q:'', answer:''}};
+  poll:{from:'room', q:'', options:['','']}, question:{from:'room', q:''}, system:{text:''},
+  lesson:{title:'', body:'', moment:{cap:'הרגע:', from:'room', text:''}}, closing:{q:'', answer:''}, summary:{text:''}};
 let ed = null, edBase = null, edDirty = false, edStale = false;
 
 const attr = s => esc(String(s ?? '')).replace(/"/g,'&quot;');
